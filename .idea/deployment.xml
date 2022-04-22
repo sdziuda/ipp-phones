@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="PublishConfigData" serverName="students.mimuw.edu.pl" remoteFilesAllowedToDisappearOnAutoupload="false">
+  <component name="PublishConfigData" serverName="students.mimuw.edu.pl" exclude=".svn;.cvs;.idea;.DS_Store;.git;.hg;*.hprof;*.pyc;*.md" remoteFilesAllowedToDisappearOnAutoupload="false">
     <serverData>
       <paths name="students.mimuw.edu.pl">
         <serverdata>
           <mappings>
             <mapping deploy="/Desktop/phones" local="$PROJECT_DIR$" web="/" />
           </mappings>
+          <excludedPaths>
+            <excludedPath local="true" path="*.md" />
+          </excludedPaths>
         </serverdata>
       </paths>
     </serverData>

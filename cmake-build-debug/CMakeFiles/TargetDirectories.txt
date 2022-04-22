@@ -1,3 +1,0 @@
-C:/Users/szymo/OneDrive/Dokumenty/GitHub/ipp-phones/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-C:/Users/szymo/OneDrive/Dokumenty/GitHub/ipp-phones/cmake-build-debug/CMakeFiles/phone_forward.dir
-C:/Users/szymo/OneDrive/Dokumenty/GitHub/ipp-phones/cmake-build-debug/CMakeFiles/edit_cache.dir

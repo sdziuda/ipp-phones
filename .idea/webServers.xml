@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="a34b744a-898b-47b2-9b6f-f9129f2ab71f" name="students.mimuw.edu.pl" url="">
+        <fileTransfer rootFolder="/home/students/inf/s/sd438422" accessType="SFTP" host="students.mimuw.edu.pl" port="22" sshConfigId="41912298-a5e9-43d0-a35d-50c55b26f873" sshConfig="sd438422@students.mimuw.edu.pl:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" keepAliveTimeout="0" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

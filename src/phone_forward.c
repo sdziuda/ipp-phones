@@ -26,7 +26,7 @@ struct PhoneNumbers {
     size_t size;
 };
 
-PhoneForward * phfwdNew(void) {
+PhoneForward *phfwdNew(void) {
     PhoneForward *pf = malloc(sizeof(PhoneForward));
 
     pf->root = malloc(sizeof(DNode));
@@ -137,7 +137,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         i++;
     }
 
-    node->forwardedNumber = malloc(sizeof (num2) + sizeof (char));
+    node->forwardedNumber = malloc(sizeof(num2) + sizeof(char));
     if (node->forwardedNumber == NULL) {
         return false;
     }
@@ -174,7 +174,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     phfwdDeleteHelper(node);
 }
 
-PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num) {
+PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     if (!isNumber(num)) {
         return NULL;
     }
@@ -219,7 +219,7 @@ PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num) {
         }
         number[i] = '\0';
     } else {
-        number = malloc(sizeof(maxPrefix) + sizeof(num) - lengthOfMaxPrefix + sizeof (char));
+        number = malloc(sizeof(maxPrefix) + sizeof(num) - lengthOfMaxPrefix + sizeof(char));
         if (number == NULL) {
             return NULL;
         }
@@ -258,7 +258,7 @@ void phnumDelete(PhoneNumbers *pn) {
     free(pn);
 }
 
-char const * phnumGet(PhoneNumbers const *pn, size_t idx) {
+char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
     if (pn == NULL || idx >= pn->size) {
         return NULL;
     }

@@ -1,25 +1,65 @@
+/** @file
+ * Implementations of phone forward functions.
+ *
+ * @author Szymon Dziuda <sd438422@students.mimuw.edu.pl>
+ * @copyright Uniwersytet Warszawski
+ * @date 2022
+ */
+
 #include <stdlib.h>
 #include <ctype.h>
 #include "phone_forward.h"
 
-#define NUMBER_OF_DIGITS 10
+#define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
 
+/**
+ * @struct Node
+ * @brief Node of the tree of phone forwarding.
+ * @var Node::forwardedNumber
+ *      String of digits containing the number to which the route from root to the current node is forwarded.
+ * @var Node::next
+ *      Array of pointers to the 10 children nodes in the tree.
+ */
 struct Node {
     char *forwardedNumber;
     struct Node *next[NUMBER_OF_DIGITS];
 };
-typedef struct Node DNode;
+typedef struct Node DNode; /**< Node of the decimal tree. */
 
+/**
+ * @struct PhoneForward phone_forward.h
+ * @brief Structure containing the root of the tree of phone forwarding.
+ * @var PhoneForward::root
+ *      Pointer to the root of the tree.
+ */
 struct PhoneForward {
     DNode *root;
 };
 
+/**
+ * @struct PhoneNumber
+ * @brief Structure containing a node of the linked list of phone numbers.
+ * @var PhoneNumber::number
+ *      String containing a phone number.
+ * @var PhoneNumber::next
+ *      Pointer to the next node in the linked list.
+ */
 struct PhoneNumber {
     char *number;
     struct PhoneNumber *next;
 };
-typedef struct PhoneNumber PNumber;
+typedef struct PhoneNumber PNumber; /**< type of the linked list of phone numbers. */
 
+/**
+ * @struct PhoneNumbers phone_forward.h
+ * @brief Structure containing a linked list of phone numbers.
+ * @var PhoneNumbers::first
+ *      Pointer to the first node in the linked list.
+ * @var PhoneNumbers::last
+ *      Pointer to the last node in the linked list.
+ * @var PhoneNumbers::size
+ *      Number of nodes in the linked list.
+ */
 struct PhoneNumbers {
     PNumber *first;
     PNumber *last;
@@ -42,6 +82,10 @@ PhoneForward *phfwdNew(void) {
     return pf;
 }
 
+/**
+ * @brief Deletes all the nodes in the tree under the given node and the node itself.
+ * @param [in, out] node - pointer to the node to delete all the nodes under.
+ */
 static void deleteAllNodesUnder(DNode *node) {
     if (node == NULL) {
         return;
@@ -65,6 +109,11 @@ void phfwdDelete(PhoneForward *pf) {
     free(pf);
 }
 
+/**
+ * @brief Checks if the given string is a valid phone number.
+ * @param [in] number - string to check
+ * @return true if the string is a valid phone number, false otherwise
+ */
 static bool isNumber(char const *number) {
     if (number == NULL) {
         return false;
@@ -81,6 +130,12 @@ static bool isNumber(char const *number) {
     return true;
 }
 
+/**
+ * @brief Checks whether the given numbers are equal.
+ * @param [in] num1 - first number.
+ * @param [in] num2 - second number.
+ * @return true if the numbers are equal, false otherwise.
+ */
 static bool areEqual(char const *num1, char const *num2) {
     size_t len1 = 0;
     size_t len2 = 0;
@@ -107,6 +162,12 @@ static bool areEqual(char const *num1, char const *num2) {
     return true;
 }
 
+/**
+ * @brief Checks whether the numbers are suitable for forwarding.
+ * @param [in] num1 - first number.
+ * @param [in] num2 - second number.
+ * @return true if they are suitable, false otherwise.
+ */
 static bool checkNumbers(char const *num1, char const *num2) {
     if (!isNumber(num1) || !isNumber(num2) || areEqual(num1, num2)) {
         return false;
@@ -174,6 +235,12 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     deleteAllNodesUnder(node);
 }
 
+/**
+ * @brief Copies the number to the given buffer.
+ * @param [in] num - the number to copy.
+ * @param [in, out] numberPtr - the buffer to copy the number to.
+ * @return true if the number was copied successfully, false if there was allocation error.
+ */
 static inline bool copyNumber(const char *num, char **numberPtr) {
     char *number = malloc(sizeof(num) + sizeof(char));
     if (number == NULL) {
@@ -191,6 +258,16 @@ static inline bool copyNumber(const char *num, char **numberPtr) {
     return true;
 }
 
+/**
+ * @brief Creates a number after forwarding the given number.
+ * This function first copies the given prefix @p forwardedPrefix and then appends the rest of the given number @p num
+ * without the original prefix that was forwarded.
+ * @param [in] num - number to be forwarded.
+ * @param [in] forwardedPrefix - the prefix which the longest original prefix is forwarded to.
+ * @param [in] lenOfOriginalPrefix - length of the original prefix.
+ * @param [in, out] numberPtr - pointer to the created number.
+ * @return true if the number was created successfully and false if there was allocation error.
+ */
 static inline bool copyParts(const char *num,
                              char const *forwardedPrefix,
                              size_t lenOfOriginalPrefix,
@@ -219,6 +296,16 @@ static inline bool copyParts(const char *num,
     return true;
 }
 
+/**
+ * @brief Finds the longest prefix of the number that is forwarded to another number.
+ * This function is used to find the longest prefix of the number @p num that still has a number in the phone forward
+ * tree @p pf. This prefix will be then used to change the number to the forwarded number using @ref copyParts or
+ * @ref copyNumber.
+ * @param [in] pf - PhoneForward tree.
+ * @param [in] num - the number we are finding prefix of.
+ * @param [in, out] maxForwardedPrefix - number the longest prefix is forwarded to.
+ * @param [in, out] lenOfMaxOriginalPrefix - length of the longest prefix.
+ */
 static inline void findPrefix(const PhoneForward *pf,
                               const char *num,
                               char **maxForwardedPrefix,

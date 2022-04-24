@@ -42,13 +42,13 @@ PhoneForward *phfwdNew(void) {
     return pf;
 }
 
-static void phfwdDeleteHelper(DNode *node) {
+static void deleteAllNodesUnder(DNode *node) {
     if (node == NULL) {
         return;
     }
 
     for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
-        phfwdDeleteHelper(node->next[i]);
+        deleteAllNodesUnder(node->next[i]);
     }
 
     free(node->forwardedNumber);
@@ -60,7 +60,7 @@ void phfwdDelete(PhoneForward *pf) {
         return;
     }
 
-    phfwdDeleteHelper(pf->root);
+    deleteAllNodesUnder(pf->root);
 
     free(pf);
 }
@@ -171,7 +171,77 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     }
 
     prev->next[num[i - 1] - '0'] = NULL;
-    phfwdDeleteHelper(node);
+    deleteAllNodesUnder(node);
+}
+
+static inline bool copyNumber(const char *num, char **numberPtr) {
+    char *number = malloc(sizeof(num) + sizeof(char));
+    if (number == NULL) {
+        return false;
+    }
+
+    size_t i = 0;
+    while (num[i] != '\0') {
+        number[i] = num[i];
+        i++;
+    }
+    number[i] = '\0';
+
+    *numberPtr = number;
+    return true;
+}
+
+static inline bool copyParts(const char *num,
+                             char const *forwardedPrefix,
+                             size_t lenOfOriginalPrefix,
+                             char **numberPtr) {
+
+    char *number = malloc(sizeof(forwardedPrefix) + sizeof(num) - lenOfOriginalPrefix * sizeof(char) + sizeof(char));
+    if (number == NULL) {
+        return false;
+    }
+
+    size_t i = 0;
+    while (forwardedPrefix[i] != '\0') {
+        number[i] = forwardedPrefix[i];
+        i++;
+    }
+
+    size_t j = lenOfOriginalPrefix;
+    while (num[j] != '\0') {
+        number[i] = num[j];
+        i++;
+        j++;
+    }
+    number[i] = '\0';
+
+    *numberPtr = number;
+    return true;
+}
+
+static inline void findPrefix(const PhoneForward *pf,
+                              const char *num,
+                              char **maxForwardedPrefix,
+                              size_t *lenOfMaxOriginalPrefix) {
+
+    DNode *node = pf->root;
+    size_t i = 0;
+
+    while (num[i] != '\0') {
+        int digit = num[i] - '0';
+
+        if (node->next[digit] == NULL) {
+            break;
+        }
+
+        node = node->next[digit];
+        i++;
+
+        if (node->forwardedNumber != NULL) {
+            (*maxForwardedPrefix) = node->forwardedNumber;
+            (*lenOfMaxOriginalPrefix) = i;
+        }
+    }
 }
 
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
@@ -192,50 +262,23 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     pn->first->number = NULL;
     pn->first->next = NULL;
 
-    DNode *node = pf->root;
-    char *maxPrefix = NULL;
-    size_t lengthOfMaxPrefix = 0;
-    size_t i = 0;
-    while (num[i] != '\0') {
-        int digit = num[i] - '0';
-        if (node->next[digit] == NULL) {
-            break;
-        }
-        node = node->next[digit];
-        i++;
-        if (node->forwardedNumber != NULL) {
-            maxPrefix = node->forwardedNumber;
-            lengthOfMaxPrefix = i;
-        }
-    }
+    char *maxForwardedPrefix = NULL;
+    size_t lenOfMaxOriginalPrefix = 0;
+    findPrefix(pf, num, &maxForwardedPrefix, &lenOfMaxOriginalPrefix);
 
     char *number = NULL;
-    if (maxPrefix == NULL) {
-        number = malloc(sizeof(num) + sizeof(char));
-        i = 0;
-        while (num[i] != '\0') {
-            number[i] = num[i];
-            i++;
-        }
-        number[i] = '\0';
-    } else {
-        number = malloc(sizeof(maxPrefix) + sizeof(num) - lengthOfMaxPrefix + sizeof(char));
-        if (number == NULL) {
+    if (maxForwardedPrefix == NULL) {
+        if (!copyNumber(num, &number)) {
+            free(pn->first);
+            free(pn);
             return NULL;
         }
-
-        size_t j = 0;
-        while (maxPrefix[j] != '\0') {
-            number[j] = maxPrefix[j];
-            j++;
+    } else {
+        if (!copyParts(num, maxForwardedPrefix, lenOfMaxOriginalPrefix, &number)) {
+            free(pn->first);
+            free(pn);
+            return NULL;
         }
-        i = lengthOfMaxPrefix;
-        while (num[i] != '\0') {
-            number[j] = num[i];
-            i++;
-            j++;
-        }
-        number[j] = '\0';
     }
 
     pn->first->number = number;

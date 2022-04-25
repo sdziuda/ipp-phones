@@ -332,7 +332,7 @@ static inline void findPrefix(const PhoneForward *pf,
 }
 
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
-    if (!isNumber(num)) {
+    if (pf == NULL) {
         return NULL;
     }
 
@@ -348,6 +348,12 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     }
     pn->first->number = NULL;
     pn->first->next = NULL;
+    pn->size = 0;
+
+    if (!isNumber(num)) {
+        free(pn->first);
+        return pn;
+    }
 
     char *maxForwardedPrefix = NULL;
     size_t lenOfMaxOriginalPrefix = 0;

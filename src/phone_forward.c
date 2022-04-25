@@ -140,10 +140,10 @@ static bool areEqual(char const *num1, char const *num2) {
     size_t len1 = 0;
     size_t len2 = 0;
 
-    while (num1[len1] != '\0') {
+    while (isdigit(num1[len1])) {
         len1++;
     }
-    while (num2[len2] != '\0') {
+    while (isdigit(num2[len2])) {
         len2++;
     }
 
@@ -152,7 +152,7 @@ static bool areEqual(char const *num1, char const *num2) {
     }
 
     int i = 0;
-    while (num1[i] != '\0' && num2[i] != '\0') {
+    while (isdigit(num1[i]) && isdigit(num2[i])) {
         if (num1[i] != num2[i]) {
             return false;
         }
@@ -182,7 +182,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
 
     DNode *node = pf->root;
     int i = 0;
-    while (num1[i] != '\0') {
+    while (isdigit(num1[i])) {
         int digit = num1[i] - '0';
         if (node->next[digit] == NULL) {
             node->next[digit] = malloc(sizeof(DNode));
@@ -204,7 +204,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     }
 
     i = 0;
-    while (num2[i] != '\0') {
+    while (isdigit(num2[i])) {
         node->forwardedNumber[i] = num2[i];
         i++;
     }
@@ -221,7 +221,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     DNode *node = pf->root;
     DNode *prev = NULL;
     int i = 0;
-    while (num[i] != '\0') {
+    while (isdigit(num[i])) {
         int digit = num[i] - '0';
         if (node->next[digit] == NULL) {
             return;
@@ -248,7 +248,7 @@ static inline bool copyNumber(const char *num, char **numberPtr) {
     }
 
     size_t i = 0;
-    while (num[i] != '\0') {
+    while (isdigit(num[i])) {
         number[i] = num[i];
         i++;
     }
@@ -279,13 +279,13 @@ static inline bool copyParts(const char *num,
     }
 
     size_t i = 0;
-    while (forwardedPrefix[i] != '\0') {
+    while (isdigit(forwardedPrefix[i])) {
         number[i] = forwardedPrefix[i];
         i++;
     }
 
     size_t j = lenOfOriginalPrefix;
-    while (num[j] != '\0') {
+    while (isdigit(num[j])) {
         number[i] = num[j];
         i++;
         j++;
@@ -314,7 +314,7 @@ static inline void findPrefix(const PhoneForward *pf,
     DNode *node = pf->root;
     size_t i = 0;
 
-    while (num[i] != '\0') {
+    while (isdigit(num[i])) {
         int digit = num[i] - '0';
 
         if (node->next[digit] == NULL) {

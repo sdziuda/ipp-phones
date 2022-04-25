@@ -403,5 +403,9 @@ char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
     for (size_t i = 0; i < idx; i++) {
         tmp = tmp->next;
     }
+
+    if (tmp == NULL) {
+        return NULL;
+    }
     return tmp->number;
 }

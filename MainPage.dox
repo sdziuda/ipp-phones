@@ -1,14 +1,14 @@
 /**
-@mainpage Dokumentacja zadania telefony
+@mainpage Documentation for the task Phone numbers
 
-### Treść zadania
+### Task description
 
-Uwaga: aktualna treść zadania znajduje się w [Moodle](https://moodle.mimuw.edu.pl).
+Disclaimer: up-to-date taks description is on [Moodle](https://moodle.mimuw.edu.pl).
 
-### Opis programu
+### Program Description
 
-Tegoroczne duże zadanie polega na zaimplementowaniu operacji na numerach telefonów.
+This year's task is to implement operations on phone numbers.
 
-TODO
+First part of the task is to implement functions regarding phone forwarding from the provided file phone_forward.h.
 
 */

@@ -1,5 +1,5 @@
 /** @file
- * Implementations of phone forward functions.
+ * Implementations of phone forwarding functions.
  *
  * @author Szymon Dziuda <sd438422@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski

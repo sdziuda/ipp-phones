@@ -1,5 +1,5 @@
 /** @file
- * Interfejs klasy przechowującej przekierowania numerów telefonicznych
+ * Interface of the class containing phone forwarding.
  *
  * @author Marcin Peczarski <marpe@mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski

@@ -129,7 +129,8 @@ void phfwdDelete(PhoneForward *pf) {
 /**
  * @brief Checks if the given string is a valid phone number.
  * @param [in] number - string to check
- * @return true if the string is a valid phone number, false otherwise
+ * @return Value @p true if the string is a valid phone number.
+ *         Value @p false otherwise.
  */
 static bool isNumber(char const *number) {
     if (number == NULL) {
@@ -151,7 +152,8 @@ static bool isNumber(char const *number) {
  * @brief Checks whether the given numbers are equal.
  * @param [in] num1 - first number.
  * @param [in] num2 - second number.
- * @return true if the numbers are equal, false otherwise.
+ * @return Value @p true if the numbers are equal.
+ *         Value @p false otherwise.
  */
 static bool areEqual(char const *num1, char const *num2) {
     size_t len1 = 0;
@@ -183,7 +185,8 @@ static bool areEqual(char const *num1, char const *num2) {
  * @brief Checks whether the numbers are suitable for forwarding.
  * @param [in] num1 - first number.
  * @param [in] num2 - second number.
- * @return true if they are suitable, false otherwise.
+ * @return Value @p true if they are suitable.
+ *         Value @p false otherwise.
  */
 static bool checkNumbers(char const *num1, char const *num2) {
     if (!isNumber(num1) || !isNumber(num2) || areEqual(num1, num2)) {
@@ -287,7 +290,8 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  * @brief Copies the number to the given buffer.
  * @param [in] num - the number to copy.
  * @param [in, out] numberPtr - the buffer to copy the number to.
- * @return true if the number was copied successfully, false if there was allocation error.
+ * @return Value @p true if the number was copied successfully.
+ *         Value @p false if there was allocation error.
  */
 static inline bool copyNumber(const char *num, char **numberPtr) {
     char *result = malloc(sizeof(num) + sizeof(char));
@@ -314,7 +318,8 @@ static inline bool copyNumber(const char *num, char **numberPtr) {
  * @param [in] forwardedPrefix - the prefix which the longest original prefix is forwarded to.
  * @param [in] lenOfOriginalPrefix - length of the original prefix.
  * @param [in, out] numberPtr - pointer to the created number.
- * @return true if the number was created successfully and false if there was allocation error.
+ * @return Value @p true if the number was created successfully.
+ *         Value @p false if there was allocation error.
  */
 static inline bool copyParts(const char *num,
                              char const *forwardedPrefix,

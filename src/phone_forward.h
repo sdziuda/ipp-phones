@@ -13,103 +13,93 @@
 #include <stddef.h>
 
 /**
- * To jest struktura przechowująca przekierowania numerów telefonów.
+ * This is a structure containing phone forwarding information.
  */
 struct PhoneForward;
-typedef struct PhoneForward PhoneForward;
+typedef struct PhoneForward PhoneForward; /**< Type of structure containing phone forwarding information. */
 
 /**
- * To jest struktura przechowująca ciąg numerów telefonów.
+ * This is a structure containing a sequence of phone numbers.
  */
 struct PhoneNumbers;
-typedef struct PhoneNumbers PhoneNumbers;
+typedef struct PhoneNumbers PhoneNumbers; /**< Type of structure containing a sequence of phone numbers. */
 
-/** @brief Tworzy nową strukturę.
- * Tworzy nową strukturę niezawierającą żadnych przekierowań.
- * @return Wskaźnik na utworzoną strukturę lub NULL, gdy nie udało się
- *         alokować pamięci.
+/** @brief Creates new structure.
+ * Creates new structure containing without any phone forwarding information.
+ * @return Pointer to the new structure or NULL if there was an allocation error.
  */
 PhoneForward * phfwdNew(void);
 
-/** @brief Usuwa strukturę.
- * Usuwa strukturę wskazywaną przez @p pf. Nic nie robi, jeśli wskaźnik ten ma
- * wartość NULL.
- * @param[in] pf – wskaźnik na usuwaną strukturę.
+/** @brief Deletes the structure.
+ * Deletes the structure pointed by @p pf. Does nothing when the pointer is NULL.
+ * @param[in] pf – pointer to the structure to be deleted.
  */
 void phfwdDelete(PhoneForward *pf);
 
-/** @brief Dodaje przekierowanie.
- * Dodaje przekierowanie wszystkich numerów mających prefiks @p num1, na numery,
- * w których ten prefiks zamieniono odpowiednio na prefiks @p num2. Każdy numer
- * jest swoim własnym prefiksem. Jeśli wcześniej zostało dodane przekierowanie
- * z takim samym parametrem @p num1, to jest ono zastępowane.
- * Relacja przekierowania numerów nie jest przechodnia.
- * @param[in,out] pf – wskaźnik na strukturę przechowującą przekierowania
- *                     numerów;
- * @param[in] num1   – wskaźnik na napis reprezentujący prefiks numerów
- *                     przekierowywanych;
- * @param[in] num2   – wskaźnik na napis reprezentujący prefiks numerów,
- *                     na które jest wykonywane przekierowanie.
- * @return Wartość @p true, jeśli przekierowanie zostało dodane.
- *         Wartość @p false, jeśli wystąpił błąd, np. podany napis nie
- *         reprezentuje numeru, oba podane numery są identyczne lub nie udało
- *         się alokować pamięci.
+/** @brief Adds a phone forwarding.
+ * Adds a phone forwarding for all numbers containing prefix @p num1, to numbers,
+ * in which this prefix was replaced by prefix @p num2. Each number is its own prefix.
+ * If phone forwarding with the same parameter @p num1 was already added, it gets replaced.
+ * Relation of phone forwarding is not transitive.
+ * @param[in,out] pf – pointer to the structure containing phone forwarding information.
+ * @param[in] num1   – pointer to the prefix of the phone numbers to be forwarded.
+ * @param[in] num2   – pointer to the prefix of the phone numbers to be forwarded to.
+ * @return Value @p true, if the phone forwarding was added.
+ *         Value @p false, if an error occurred, for example the given string doesn't represent a number,
+ *         both numbers are identical or there was an allocation error.
  */
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2);
 
-/** @brief Usuwa przekierowania.
- * Usuwa wszystkie przekierowania, w których parametr @p num jest prefiksem
- * parametru @p num1 użytego przy dodawaniu. Jeśli nie ma takich przekierowań
- * lub napis nie reprezentuje numeru, nic nie robi.
- * @param[in,out] pf – wskaźnik na strukturę przechowującą przekierowania
- *                     numerów;
- * @param[in] num    – wskaźnik na napis reprezentujący prefiks numerów.
+/** @brief Deletes a phone forwarding.
+ * Deletes all phone forwardings, in which parameter @p num is a prefix
+ * of parameter @p num1 used while adding. If no such phone forwarding was added
+ * or the given string doesn't represent a number, nothing happens.
+ * @param[in,out] pf – pointer to the structure containing phone forwarding information.
+ * @param[in] num    – pointer to the prefix of the phone numbers to be deleted.
  */
 void phfwdRemove(PhoneForward *pf, char const *num);
 
-/** @brief Wyznacza przekierowanie numeru.
- * Wyznacza przekierowanie podanego numeru. Szuka najdłuższego pasującego
- * prefiksu. Wynikiem jest ciąg zawierający co najwyżej jeden numer. Jeśli dany
- * numer nie został przekierowany, to wynikiem jest ciąg zawierający ten numer.
- * Jeśli podany napis nie reprezentuje numeru, wynikiem jest pusty ciąg.
- * Alokuje strukturę @p PhoneNumbers, która musi być zwolniona za pomocą
- * funkcji @ref phnumDelete.
- * @param[in] pf  – wskaźnik na strukturę przechowującą przekierowania numerów;
- * @param[in] num – wskaźnik na napis reprezentujący numer.
- * @return Wskaźnik na strukturę przechowującą ciąg numerów lub NULL, gdy nie
- *         udało się alokować pamięci.
+/** @brief Obtains the number after forwarding.
+ * Obtains the phone forwarding of the given phone number. Finds the longest suitable
+ * prefix. The result is a sequence containing no more than one number. If the given number
+ * hasn't been forwarded, the result is the exact same number.
+ * If the given string doesn't represent a number, the result is empty sequence.
+ * Allocates structure @p PhoneNumbers, which must be then freed using @ref phnumDelete.
+ * @param[in] pf  – pointer to the structure containing phone forwarding information.
+ * @param[in] num – pointer to the string containing the phone number to be forwarded.
+ * @return Pointer to the structure containing the sequence of phone number or NULL if
+ *         there was an allocation error.
  */
 PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num);
 
-/** @brief Wyznacza przekierowania na dany numer.
- * Wyznacza następujący ciąg numerów: jeśli istnieje numer @p x, taki że wynik
- * wywołania @p phfwdGet z numerem @p x zawiera numer @p num, to numer @p x
- * należy do wyniku wywołania @ref phfwdReverse z numerem @p num. Dodatkowo ciąg
- * wynikowy zawsze zawiera też numer @p num. Wynikowe numery są posortowane
- * leksykograficznie i nie mogą się powtarzać. Jeśli podany napis nie
- * reprezentuje numeru, wynikiem jest pusty ciąg. Alokuje strukturę
- * @p PhoneNumbers, która musi być zwolniona za pomocą funkcji @ref phnumDelete.
- * @param[in] pf  – wskaźnik na strukturę przechowującą przekierowania numerów;
- * @param[in] num – wskaźnik na napis reprezentujący numer.
- * @return Wskaźnik na strukturę przechowującą ciąg numerów lub NULL, gdy nie
- *         udało się alokować pamięci.
+/** @brief Obtains all forwardings to the given number.
+ * Obtains the sequence of numbers so that: if such number @p x exists, that a result of
+ * calling @p phfwdGet with number @p x contains number @p num, then number @p x
+ * is a part of result of calling @ref phfwdReverse with number @p num. Additionally,
+ * the result sequence may contain @p num. Numbers in the result sequence are sorted
+ * in lexicographic order and occur only once. If the given string doesn't represent
+ * a number, the result is an empty sequence. Allocates structure @p PhoneNumbers,
+ * which must be then freed using @ref phnumDelete.
+ * @param[in] pf  – pointer to the structure containing phone forwarding information.
+ * @param[in] num – pointer to the string containing the phone number to be reversed.
+ * @return Pointer to the structure containing the sequence of phone number or NULL if
+ *         there was an allocation error.
  */
 PhoneNumbers * phfwdReverse(PhoneForward const *pf, char const *num);
 
-/** @brief Usuwa strukturę.
- * Usuwa strukturę wskazywaną przez @p pnum. Nic nie robi, jeśli wskaźnik ten ma
- * wartość NULL.
- * @param[in] pnum – wskaźnik na usuwaną strukturę.
+/** @brief Deletes the structure.
+ * Deletes the structure pointed by @p pnum. Does nothing when the pointer is NULL.
+ * @param[in] pnum – pointer to the structure to be deleted.
  */
 void phnumDelete(PhoneNumbers *pnum);
 
-/** @brief Udostępnia numer.
- * Udostępnia wskaźnik na napis reprezentujący numer. Napisy są indeksowane
- * kolejno od zera.
- * @param[in] pnum – wskaźnik na strukturę przechowującą ciąg numerów telefonów;
- * @param[in] idx  – indeks numeru telefonu.
- * @return Wskaźnik na napis reprezentujący numer telefonu. Wartość NULL, jeśli
- *         wskaźnik @p pnum ma wartość NULL lub indeks ma za dużą wartość.
+/** @brief Gives access to the number.
+ * Gives access to the pointer to the string representing a number. Numbers are indexed
+ * from 0.
+ * @param[in] pnum – pointer to the structure containing the sequence of phone numbers.
+ * @param[in] idx  – index of the number to be accessed.
+ * @return Pointer to the string representing a phone number. Value NULL, if pointer
+ * @p pnum points to NULL or @p idx is out of range.
  */
 char const * phnumGet(PhoneNumbers const *pnum, size_t idx);
 

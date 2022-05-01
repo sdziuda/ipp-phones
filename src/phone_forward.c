@@ -99,6 +99,23 @@ static void deleteAllNodesUnder(DNode *node) {
     free(node);
 }
 
+/**
+ * @brief Deletes the nodes in phone forwarding tree.
+ * First changes the pointer to the child in the parent node to NULL. Then deletes all the nodes in the tree under the
+ * given node and the node itself using @ref deleteAllNodesUnder function.
+ * @param [in, out] parent - pointer to the parent of the node we want to delete.
+ * @param [in] digit - digit of the node we want to delete.
+ * @param [in, out] child - pointer to the node we want to delete.
+ */
+static void deleteChildAndNodesUnder(DNode *parent, int digit, DNode *child) {
+    if (parent == NULL || child == NULL) {
+        return;
+    }
+
+    parent->next[digit] = NULL;
+    deleteAllNodesUnder(child);
+}
+
 void phfwdDelete(PhoneForward *pf) {
     if (pf == NULL) {
         return;
@@ -181,17 +198,26 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     }
 
     DNode *node = pf->root;
+    DNode *beforeFirstAdded = NULL;
+    DNode *firstAdded = NULL;
     int i = 0;
+    int firstAddedDigit = 0;
     while (isdigit(num1[i])) {
         int digit = num1[i] - '0';
         if (node->next[digit] == NULL) {
             node->next[digit] = malloc(sizeof(DNode));
             if (node->next[digit] == NULL) {
+                deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
                 return false;
             }
             node->next[digit]->forwardedNumber = NULL;
             for (int j = 0; j < NUMBER_OF_DIGITS; j++) {
                 node->next[digit]->next[j] = NULL;
+            }
+            if (firstAdded == NULL) {
+                beforeFirstAdded = node;
+                firstAddedDigit = digit;
+                firstAdded = node->next[digit];
             }
         }
         node = node->next[digit];
@@ -200,6 +226,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
 
     node->forwardedNumber = malloc(sizeof(num2) + sizeof(char));
     if (node->forwardedNumber == NULL) {
+        deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
         return false;
     }
 
@@ -213,26 +240,47 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     return true;
 }
 
+/**
+ * @brief Finds the number od children for given node.
+ * Finds all children that are not NULL and returns the number of them.
+ * @param [in] node the node to find the number of children for.
+ * @return the number of children.
+ */
+static inline int numberOfChildren(DNode *node) {
+    int sum = 0;
+    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+        if (node->next[i] != NULL) {
+            sum++;
+        }
+    }
+    return sum;
+}
+
 void phfwdRemove(PhoneForward *pf, char const *num) {
     if (!isNumber(num)) {
         return;
     }
 
     DNode *node = pf->root;
-    DNode *prev = NULL;
+    DNode *beforePointToRemove = pf->root;
+    DNode *lastPointToRemove = NULL;
+    int pointToRemoveDigit = 0;
     int i = 0;
     while (isdigit(num[i])) {
         int digit = num[i] - '0';
         if (node->next[digit] == NULL) {
             return;
         }
-        prev = node;
+        if (node->forwardedNumber != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+            beforePointToRemove = node;
+            pointToRemoveDigit = digit;
+            lastPointToRemove = node->next[digit];
+        }
         node = node->next[digit];
         i++;
     }
 
-    prev->next[num[i - 1] - '0'] = NULL;
-    deleteAllNodesUnder(node);
+    deleteChildAndNodesUnder(beforePointToRemove, pointToRemoveDigit, lastPointToRemove);
 }
 
 /**
@@ -242,19 +290,19 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  * @return true if the number was copied successfully, false if there was allocation error.
  */
 static inline bool copyNumber(const char *num, char **numberPtr) {
-    char *number = malloc(sizeof(num) + sizeof(char));
-    if (number == NULL) {
+    char *result = malloc(sizeof(num) + sizeof(char));
+    if (result == NULL) {
         return false;
     }
 
     size_t i = 0;
     while (isdigit(num[i])) {
-        number[i] = num[i];
+        result[i] = num[i];
         i++;
     }
-    number[i] = '\0';
+    result[i] = '\0';
 
-    *numberPtr = number;
+    *numberPtr = result;
     return true;
 }
 
@@ -273,26 +321,26 @@ static inline bool copyParts(const char *num,
                              size_t lenOfOriginalPrefix,
                              char **numberPtr) {
 
-    char *number = malloc(sizeof(forwardedPrefix) + sizeof(num) - lenOfOriginalPrefix * sizeof(char) + sizeof(char));
-    if (number == NULL) {
+    char *result = malloc(sizeof(forwardedPrefix) + sizeof(num) - lenOfOriginalPrefix * sizeof(char) + sizeof(char));
+    if (result == NULL) {
         return false;
     }
 
     size_t i = 0;
     while (isdigit(forwardedPrefix[i])) {
-        number[i] = forwardedPrefix[i];
+        result[i] = forwardedPrefix[i];
         i++;
     }
 
     size_t j = lenOfOriginalPrefix;
     while (isdigit(num[j])) {
-        number[i] = num[j];
+        result[i] = num[j];
         i++;
         j++;
     }
-    number[i] = '\0';
+    result[i] = '\0';
 
-    *numberPtr = number;
+    *numberPtr = result;
     return true;
 }
 

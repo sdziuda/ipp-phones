@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
@@ -44,11 +45,17 @@ struct PhoneForward {
  * @var PhoneNumber::next
  *      Pointer to the next node in the linked list.
  */
-struct PhoneNumber {
+/*struct PhoneNumber {
     char *number;
     struct PhoneNumber *next;
 };
-typedef struct PhoneNumber PNumber; /**< type of the linked list of phone numbers. */
+typedef struct PhoneNumber PNumber;*/ /**< type of the linked list of phone numbers. */
+
+struct PhoneNumber {
+    char *prefix;
+    struct PhoneNumber *next[NUMBER_OF_DIGITS];
+};
+typedef struct PhoneNumber PNumber;
 
 /**
  * @struct PhoneNumbers phone_forward.h
@@ -60,9 +67,14 @@ typedef struct PhoneNumber PNumber; /**< type of the linked list of phone number
  * @var PhoneNumbers::size
  *      Number of nodes in the linked list.
  */
-struct PhoneNumbers {
+/*struct PhoneNumbers {
     PNumber *first;
     PNumber *last;
+    size_t size;
+};*/
+
+struct PhoneNumbers {
+    PNumber *root;
     size_t size;
 };
 
@@ -327,7 +339,7 @@ static inline bool copyParts(const char *num,
     }
 
     size_t i = 0;
-    while (isdigit(forwardedPrefix[i])) {
+    while (forwardedPrefix != NULL && isdigit(forwardedPrefix[i])) {
         result[i] = forwardedPrefix[i];
         i++;
     }
@@ -379,6 +391,135 @@ static inline void findPrefix(const PhoneForward *pf,
     }
 }
 
+static int length(char const *num) {
+    int i = 0;
+    while (isdigit(num[i])) {
+        i++;
+    }
+    return i;
+}
+
+static bool addNumberUnder(PNumber *pn, char *num) {
+    int digit = num[0] - '0';
+    if (pn->next[digit] == NULL) {
+        PNumber *newPn = malloc(sizeof(PNumber));
+        if (newPn == NULL) {
+            return false;
+        }
+        newPn->prefix = num;
+        for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+            newPn->next[i] = NULL;
+        }
+        pn->next[digit] = newPn;
+        return true;
+    }
+    else if (length(pn->next[digit]->prefix) < length(num)) {
+        char *tmp = NULL;
+        if (!copyParts(num, NULL, length(pn->next[digit]->prefix), &tmp)) {
+            return false;
+        }
+        free(num);
+        num = tmp;
+        return addNumberUnder(pn->next[digit], num);
+    }
+    else if (length(pn->next[digit]->prefix) > length(num)) {
+        PNumber *newPn = malloc(sizeof(PNumber));
+        if (newPn == NULL) {
+            return false;
+        }
+        newPn->prefix = num;
+        for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+            newPn->next[i] = NULL;
+        }
+        char *tmp = NULL;
+        if (!copyParts(pn->next[digit]->prefix, NULL, length(num), &tmp)) {
+            return false;
+        }
+        free(pn->next[digit]->prefix);
+        pn->next[digit]->prefix = tmp;
+        newPn->next[tmp[0] - '0'] = pn->next[digit];
+        pn->next[digit] = newPn;
+        return true;
+    } else {
+        if (areEqual(pn->next[digit]->prefix, num)) {
+            free(num);
+            return true;
+        }
+        else {
+            int i = 0;
+            while (isdigit(pn->next[digit]->prefix[i]) && isdigit(num[i]) && pn->next[digit]->prefix[i] == num[i]) {
+                i++;
+            }
+            if (i == 0) {
+                PNumber *newPn = malloc(sizeof(PNumber));
+                if (newPn == NULL) {
+                    return false;
+                }
+                newPn->prefix = num;
+                for (int j = 0; j < NUMBER_OF_DIGITS; j++) {
+                    newPn->next[j] = NULL;
+                }
+                pn->next[digit] = newPn;
+                return true;
+            }
+            PNumber *newPn = malloc(sizeof(PNumber));
+            if (newPn == NULL) {
+                return false;
+            }
+            newPn->prefix = malloc(sizeof(char) * (i + 1));
+            if (newPn->prefix == NULL) {
+                return false;
+            }
+            for (int j = 0; j < i; j++) {
+                newPn->prefix[j] = pn->next[digit]->prefix[j];
+            }
+            for (int j = 0; j < NUMBER_OF_DIGITS; ++j) {
+                newPn->next[j] = NULL;
+            }
+
+            char *tmp = NULL;
+            if (!copyParts(pn->next[digit]->prefix, NULL, i, &tmp)) {
+                return false;
+            }
+            free(pn->next[digit]->prefix);
+            pn->next[digit]->prefix = tmp;
+
+            tmp = NULL;
+            if (!copyParts(num, NULL, i, &tmp)) {
+                return false;
+            }
+            free(num);
+            num = tmp;
+
+            PNumber *newPn2 = malloc(sizeof(PNumber));
+            if (newPn2 == NULL) {
+                return false;
+            }
+            newPn2->prefix = num;
+            for (int j = 0; j < NUMBER_OF_DIGITS; ++j) {
+                newPn2->next[j] = NULL;
+            }
+
+            newPn->next[num[0] - '0'] = newPn2;
+            newPn->next[pn->next[digit]->prefix[i] - '0'] = pn->next[digit];
+            pn->next[digit] = newPn;
+            return true;
+        }
+    }
+}
+
+static bool addPhoneNumber(PhoneNumbers *pnum, char *num) {
+    if (!isNumber(num)) {
+        return false;
+    }
+
+    if (!addNumberUnder(pnum->root, num)) {
+        return false;
+    }
+    pnum->size++;
+    return true;
+}
+
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     if (pf == NULL) {
         return NULL;
@@ -389,19 +530,34 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
         return NULL;
     }
 
-    pn->first = malloc(sizeof(PNumber));
+    /*pn->first = malloc(sizeof(PNumber));
     if (pn->first == NULL) {
         free(pn);
         return NULL;
     }
     pn->first->number = NULL;
-    pn->first->next = NULL;
+    pn->first->next = NULL;*/
+    pn->root = NULL;
     pn->size = 0;
 
     if (!isNumber(num)) {
-        free(pn->first);
         return pn;
     }
+
+    pn->root = malloc(sizeof(PNumber));
+    if (pn->root == NULL) {
+        free(pn);
+        return NULL;
+    }
+    pn->root->prefix = NULL;
+    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+        pn->root->next[i] = NULL;
+    }
+
+    /*if (!isNumber(num)) {
+        free(pn->root);
+        return pn;
+    }*/
 
     char *maxForwardedPrefix = NULL;
     size_t lenOfMaxOriginalPrefix = 0;
@@ -410,22 +566,36 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     char *number = NULL;
     if (maxForwardedPrefix == NULL) {
         if (!copyNumber(num, &number)) {
-            free(pn->first);
+            free(pn->root);
             free(pn);
             return NULL;
         }
     } else {
         if (!copyParts(num, maxForwardedPrefix, lenOfMaxOriginalPrefix, &number)) {
-            free(pn->first);
+            free(pn->root);
             free(pn);
             return NULL;
         }
     }
 
-    pn->first->number = number;
+    /*pn->first->number = number;
     pn->last = pn->first;
-    pn->size = 1;
+    pn->size = 1;*/
+    addPhoneNumber(pn, number);
     return pn;
+}
+
+static void deleteAllPhoneNumbers(PNumber *node) {
+    if (node == NULL) {
+        return;
+    }
+
+    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+        deleteAllPhoneNumbers(node->next[i]);
+    }
+
+    free(node->prefix);
+    free(node);
 }
 
 void phnumDelete(PhoneNumbers *pn) {
@@ -433,12 +603,14 @@ void phnumDelete(PhoneNumbers *pn) {
         return;
     }
 
-    for (size_t i = 0; i < pn->size; i++) {
+    /*for (size_t i = 0; i < pn->size; i++) {
         free(pn->first->number);
         PNumber *tmp = pn->first;
         pn->first = pn->first->next;
         free(tmp);
-    }
+    }*/
+    deleteAllPhoneNumbers(pn->root);
+
     free(pn);
 }
 
@@ -447,7 +619,7 @@ char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
         return NULL;
     }
 
-    PNumber *tmp = pn->first;
+    /*PNumber *tmp = pn->first;
     for (size_t i = 0; i < idx; i++) {
         tmp = tmp->next;
     }
@@ -455,5 +627,12 @@ char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
     if (tmp == NULL) {
         return NULL;
     }
-    return tmp->number;
+    return tmp->number;*/
+
+    for (size_t i = 0; i < NUMBER_OF_DIGITS; i++) {
+        if (pn->root->next[i] != NULL) {
+            return pn->root->next[i]->prefix;
+        }
+    }
+    return NULL;
 }

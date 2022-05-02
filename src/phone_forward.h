@@ -1,5 +1,5 @@
 /** @file
- * Interface of the class containing phone forwarding.
+ * Interface of the class storing phone forwarding.
  *
  * @author Marcin Peczarski <marpe@mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski

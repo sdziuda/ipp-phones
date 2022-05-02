@@ -227,20 +227,23 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         i++;
     }
 
-    free(node->forwardedNumber);
-    node->forwardedNumber = malloc(sizeof(num2) + sizeof(char));
-    if (node->forwardedNumber == NULL) {
-        deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
-        return false;
-    }
-
+    char *result = NULL;
     i = 0;
+
     while (isdigit(num2[i])) {
-        node->forwardedNumber[i] = num2[i];
+        result = realloc(result, (i + 1) * sizeof(char));
+        if (result == NULL) {
+            deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
+            return false;
+        }
+        result[i] = num2[i];
         i++;
     }
-    node->forwardedNumber[i] = '\0';
+    result = realloc(result, (i + 1) * sizeof(char));
+    result[i] = '\0';
 
+    free(node->forwardedNumber);
+    node->forwardedNumber = result;
     return true;
 }
 

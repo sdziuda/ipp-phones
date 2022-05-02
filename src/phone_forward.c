@@ -253,7 +253,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
  * @param [in] node the node to find the number of children for.
  * @return the number of children.
  */
-static inline int numberOfChildren(DNode *node) {
+static int numberOfChildren(DNode *node) {
     int sum = 0;
     for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
         if (node->next[i] != NULL) {
@@ -297,7 +297,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  * @return Value @p true if the number was copied successfully.
  *         Value @p false if there was allocation error.
  */
-static inline bool copyNumber(const char *num, char **numberPtr) {
+static bool copyNumber(const char *num, char **numberPtr) {
     char *result = NULL;
     size_t i = 0;
 
@@ -327,7 +327,7 @@ static inline bool copyNumber(const char *num, char **numberPtr) {
  * @return Value @p true if the number was created successfully.
  *         Value @p false if there was allocation error.
  */
-static inline bool copyParts(const char *num,
+static bool copyParts(const char *num,
                              char const *forwardedPrefix,
                              size_t lenOfOriginalPrefix,
                              char **numberPtr) {
@@ -370,7 +370,7 @@ static inline bool copyParts(const char *num,
  * @param [in, out] maxForwardedPrefix - number the longest prefix is forwarded to.
  * @param [in, out] lenOfMaxOriginalPrefix - length of the longest prefix.
  */
-static inline void findPrefix(const PhoneForward *pf,
+static void findPrefix(const PhoneForward *pf,
                               const char *num,
                               char **maxForwardedPrefix,
                               size_t *lenOfMaxOriginalPrefix) {

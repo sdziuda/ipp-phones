@@ -107,7 +107,7 @@ static void deleteAllNodesUnder(DNode *node) {
  * @param [in] digit - digit of the node we want to delete.
  * @param [in, out] child - pointer to the node we want to delete.
  */
-static void deleteChildAndNodesUnder(DNode *parent, int digit, DNode *child) {
+static void deleteChildAndNodesUnder(DNode *parent, int const digit, DNode *child) {
     if (parent == NULL || child == NULL) {
         return;
     }
@@ -253,7 +253,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
  * @param [in] node the node to find the number of children for.
  * @return the number of children.
  */
-static int numberOfChildren(DNode *node) {
+static int numberOfChildren(DNode const *node) {
     int sum = 0;
     for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
         if (node->next[i] != NULL) {
@@ -297,7 +297,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  * @return Value @p true if the number was copied successfully.
  *         Value @p false if there was allocation error.
  */
-static bool copyNumber(const char *num, char **numberPtr) {
+static bool copyNumber(char const *num, char **numberPtr) {
     char *result = NULL;
     size_t i = 0;
 
@@ -327,10 +327,10 @@ static bool copyNumber(const char *num, char **numberPtr) {
  * @return Value @p true if the number was created successfully.
  *         Value @p false if there was allocation error.
  */
-static bool copyParts(const char *num,
-                             char const *forwardedPrefix,
-                             size_t lenOfOriginalPrefix,
-                             char **numberPtr) {
+static bool copyParts(char const *num,
+                      char const *forwardedPrefix,
+                      size_t lenOfOriginalPrefix,
+                      char **numberPtr) {
 
     char *result = NULL;
     size_t i = 0;
@@ -370,10 +370,10 @@ static bool copyParts(const char *num,
  * @param [in, out] maxForwardedPrefix - number the longest prefix is forwarded to.
  * @param [in, out] lenOfMaxOriginalPrefix - length of the longest prefix.
  */
-static void findPrefix(const PhoneForward *pf,
-                              const char *num,
-                              char **maxForwardedPrefix,
-                              size_t *lenOfMaxOriginalPrefix) {
+static void findPrefix(PhoneForward const *pf,
+                       char const *num,
+                       char **maxForwardedPrefix,
+                       size_t *lenOfMaxOriginalPrefix) {
 
     DNode *node = pf->root;
     size_t i = 0;

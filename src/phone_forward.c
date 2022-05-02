@@ -227,6 +227,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         i++;
     }
 
+    free(node->forwardedNumber);
     node->forwardedNumber = malloc(sizeof(num2) + sizeof(char));
     if (node->forwardedNumber == NULL) {
         deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
@@ -260,7 +261,7 @@ static inline int numberOfChildren(DNode *node) {
 }
 
 void phfwdRemove(PhoneForward *pf, char const *num) {
-    if (!isNumber(num)) {
+    if (pf == NULL || !isNumber(num)) {
         return;
     }
 

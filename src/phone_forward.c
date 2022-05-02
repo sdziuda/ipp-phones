@@ -298,16 +298,18 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  *         Value @p false if there was allocation error.
  */
 static inline bool copyNumber(const char *num, char **numberPtr) {
-    char *result = malloc(sizeof(num) + sizeof(char));
-    if (result == NULL) {
-        return false;
-    }
-
+    char *result = NULL;
     size_t i = 0;
+
     while (isdigit(num[i])) {
+        result = realloc(result, (i + 1) * sizeof(char));
+        if (result == NULL) {
+            return false;
+        }
         result[i] = num[i];
         i++;
     }
+    result = realloc(result, (i + 1) * sizeof(char));
     result[i] = '\0';
 
     *numberPtr = result;
@@ -330,23 +332,28 @@ static inline bool copyParts(const char *num,
                              size_t lenOfOriginalPrefix,
                              char **numberPtr) {
 
-    char *result = malloc(sizeof(forwardedPrefix) + sizeof(num) - lenOfOriginalPrefix * sizeof(char) + sizeof(char));
-    if (result == NULL) {
-        return false;
-    }
-
+    char *result = NULL;
     size_t i = 0;
     while (isdigit(forwardedPrefix[i])) {
+        result = realloc(result, (i + 1) * sizeof(char));
+        if (result == NULL) {
+            return false;
+        }
         result[i] = forwardedPrefix[i];
         i++;
     }
 
     size_t j = lenOfOriginalPrefix;
     while (isdigit(num[j])) {
+        result = realloc(result, (i + j - lenOfOriginalPrefix + 1) * sizeof(char));
+        if (result == NULL) {
+            return false;
+        }
         result[i] = num[j];
         i++;
         j++;
     }
+    result = realloc(result, (i + 1) * sizeof(char));
     result[i] = '\0';
 
     *numberPtr = result;

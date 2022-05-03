@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
@@ -46,7 +47,6 @@ struct PhoneForward {
  */
 struct PhoneNumber {
     char *number;
-    struct PhoneNumber *next;
 };
 typedef struct PhoneNumber PNumber; /**< type of the linked list of phone numbers. */
 
@@ -61,8 +61,7 @@ typedef struct PhoneNumber PNumber; /**< type of the linked list of phone number
  *      Number of nodes in the linked list.
  */
 struct PhoneNumbers {
-    PNumber *first;
-    PNumber *last;
+    PNumber *array;
     size_t size;
 };
 
@@ -395,6 +394,24 @@ static void findPrefix(PhoneForward const *pf,
     }
 }
 
+/** @brief Adds phone number to the array.
+ * Allocates memory for the new number and adds it to the array.
+ * @param [in, out] pNumbers - pointer to the structure of phone numbers.
+ * @param [in] number - pointer to the number to add.
+ * @return Value @p true if the number was added successfully.
+ *         Value @p false if there was allocation error.
+ */
+static bool addPhoneNumber(PhoneNumbers *pNumbers, char **number) {
+    pNumbers->size++;
+    pNumbers->array = realloc(pNumbers->array, pNumbers->size * sizeof(PNumber));
+    if (pNumbers->array == NULL) {
+        return false;
+    }
+
+    pNumbers->array[pNumbers->size - 1].number = *number;
+    return true;
+}
+
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     if (pf == NULL) {
         return NULL;
@@ -404,18 +421,10 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     if (pn == NULL) {
         return NULL;
     }
-
-    pn->first = malloc(sizeof(PNumber));
-    if (pn->first == NULL) {
-        free(pn);
-        return NULL;
-    }
-    pn->first->number = NULL;
-    pn->first->next = NULL;
+    pn->array = NULL;
     pn->size = 0;
 
     if (!isNumber(num)) {
-        free(pn->first);
         return pn;
     }
 
@@ -426,21 +435,23 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     char *number = NULL;
     if (maxForwardedPrefix == NULL) {
         if (!copyNumber(num, &number)) {
-            free(pn->first);
+            free(pn->array);
             free(pn);
             return NULL;
         }
     } else {
         if (!copyParts(num, maxForwardedPrefix, lenOfMaxOriginalPrefix, &number)) {
-            free(pn->first);
+            free(pn->array);
             free(pn);
             return NULL;
         }
     }
 
-    pn->first->number = number;
-    pn->last = pn->first;
-    pn->size = 1;
+    if (!addPhoneNumber(pn, &number)) {
+        free(pn->array);
+        free(pn);
+        return NULL;
+    }
     return pn;
 }
 
@@ -450,11 +461,9 @@ void phnumDelete(PhoneNumbers *pn) {
     }
 
     for (size_t i = 0; i < pn->size; i++) {
-        free(pn->first->number);
-        PNumber *tmp = pn->first;
-        pn->first = pn->first->next;
-        free(tmp);
+        free(pn->array[i].number);
     }
+    free(pn->array);
     free(pn);
 }
 
@@ -463,13 +472,5 @@ char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
         return NULL;
     }
 
-    PNumber *tmp = pn->first;
-    for (size_t i = 0; i < idx; i++) {
-        tmp = tmp->next;
-    }
-
-    if (tmp == NULL) {
-        return NULL;
-    }
-    return tmp->number;
+    return pn->array[idx].number;
 }

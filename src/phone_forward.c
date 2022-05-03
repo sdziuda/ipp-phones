@@ -39,26 +39,22 @@ struct PhoneForward {
 
 /**
  * @struct PhoneNumber
- * @brief Structure containing a node of the linked list of phone numbers.
+ * @brief Structure containing a single phone number.
  * @var PhoneNumber::number
  *      String containing a phone number.
- * @var PhoneNumber::next
- *      Pointer to the next node in the linked list.
  */
 struct PhoneNumber {
     char *number;
 };
-typedef struct PhoneNumber PNumber; /**< type of the linked list of phone numbers. */
+typedef struct PhoneNumber PNumber; /**< A single phone number. */
 
 /**
  * @struct PhoneNumbers phone_forward.h
- * @brief Structure containing a linked list of phone numbers.
- * @var PhoneNumbers::first
- *      Pointer to the first node in the linked list.
- * @var PhoneNumbers::last
- *      Pointer to the last node in the linked list.
+ * @brief Structure containing an array of phone numbers.
+ * @var PhoneNumbers::array
+ *      Array of phone numbers.
  * @var PhoneNumbers::size
- *      Number of nodes in the linked list.
+ *      Number of elements in the array.
  */
 struct PhoneNumbers {
     PNumber *array;

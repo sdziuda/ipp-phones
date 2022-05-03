@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
@@ -18,11 +17,14 @@
  * @brief Node of the tree of phone forwarding.
  * @var Node::forwardedNumber
  *      String of digits containing the number to which the route from root to the current node is forwarded.
+ * @var Node::parent
+ *      Pointer to the parent node.
  * @var Node::next
  *      Array of pointers to the 10 children nodes in the tree.
  */
 struct Node {
     char *forwardedNumber;
+    struct Node *parent;
     struct Node *next[NUMBER_OF_DIGITS];
 };
 typedef struct Node DNode; /**< Node of the decimal tree. */
@@ -69,6 +71,7 @@ PhoneForward *phfwdNew(void) {
         free(pf);
         return NULL;
     }
+    pf->root->parent = NULL;
     pf->root->forwardedNumber = NULL;
     for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
         pf->root->next[i] = NULL;
@@ -78,37 +81,49 @@ PhoneForward *phfwdNew(void) {
 }
 
 /**
- * @brief Deletes all the nodes in the tree under the given node and the node itself.
- * @param [in, out] node - pointer to the node to delete all the nodes under.
- */
-static void deleteAllNodesUnder(DNode *node) {
-    if (node == NULL) {
-        return;
-    }
-
-    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
-        deleteAllNodesUnder(node->next[i]);
-    }
-
-    free(node->forwardedNumber);
-    free(node);
-}
-
-/**
  * @brief Deletes the nodes in phone forwarding tree.
- * First changes the pointer to the child in the parent node to NULL. Then deletes all the nodes in the tree under the
- * given node and the node itself using @ref deleteAllNodesUnder function.
- * @param [in, out] parent - pointer to the parent of the node we want to delete.
- * @param [in] digit - digit of the node we want to delete.
- * @param [in, out] child - pointer to the node we want to delete.
+ * Starting from the given Node and going down the tree, deletes all the nodes in the tree under the given node and the
+ * node itself.
+ * @param [in, out] node - pointer to the node we want to start deleting from.
  */
-static void deleteChildAndNodesUnder(DNode *parent, int const digit, DNode *child) {
-    if (parent == NULL || child == NULL) {
+static void deleteIterative(DNode *node) {
+    DNode *current = node;
+    if (current == NULL) {
         return;
     }
+    current->parent = NULL;
 
-    parent->next[digit] = NULL;
-    deleteAllNodesUnder(child);
+    while (current != NULL) {
+        bool hasChild = false;
+
+        for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+            if (current->next[i]) {
+                current = current->next[i];
+                hasChild = true;
+                break;
+            }
+        }
+
+        if (!hasChild) {
+            DNode *parent = current->parent;
+            if (parent == NULL) {
+                free(current->forwardedNumber);
+                free(current);
+                break;
+            }
+
+            for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+                if (parent->next[i] == current) {
+                    parent->next[i] = NULL;
+                    break;
+                }
+            }
+
+            free(current->forwardedNumber);
+            free(current);
+            current = parent;
+        }
+    }
 }
 
 void phfwdDelete(PhoneForward *pf) {
@@ -116,7 +131,7 @@ void phfwdDelete(PhoneForward *pf) {
         return;
     }
 
-    deleteAllNodesUnder(pf->root);
+    deleteIterative(pf->root);
 
     free(pf);
 }
@@ -205,9 +220,11 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         if (node->next[digit] == NULL) {
             node->next[digit] = malloc(sizeof(DNode));
             if (node->next[digit] == NULL) {
-                deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
+                beforeFirstAdded->next[firstAddedDigit] = NULL;
+                deleteIterative(firstAdded);
                 return false;
             }
+            node->next[digit]->parent = node;
             node->next[digit]->forwardedNumber = NULL;
             for (int j = 0; j < NUMBER_OF_DIGITS; j++) {
                 node->next[digit]->next[j] = NULL;
@@ -228,7 +245,8 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     while (isdigit(num2[i])) {
         result = realloc(result, (i + 1) * sizeof(char));
         if (result == NULL) {
-            deleteChildAndNodesUnder(beforeFirstAdded, firstAddedDigit, firstAdded);
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+            deleteIterative(firstAdded);
             return false;
         }
         result[i] = num2[i];
@@ -282,7 +300,8 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
         i++;
     }
 
-    deleteChildAndNodesUnder(beforePointToRemove, pointToRemoveDigit, lastPointToRemove);
+    beforePointToRemove->next[pointToRemoveDigit] = NULL;
+    deleteIterative(lastPointToRemove);
 }
 
 /**

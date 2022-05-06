@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
@@ -483,6 +482,20 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
         return NULL;
     }
     return pn;
+}
+
+/** @brief Dummy function.
+ * For now this function doesn't do anything. It is here only to avoid potential
+ * warnings from the compiler. This function will be implemented in the next
+ * part of the task and this comment will be removed.
+ * @param [in] pf - unused pointer to the PhoneForward tree.
+ * @param [in] num - unused pointer to the number.
+ * @return NULL in every case.
+ */
+PhoneNumbers *phfwdReverse(
+        __attribute__((unused)) PhoneForward const *pf,
+        __attribute__((unused)) char const *num) {
+    return NULL;
 }
 
 void phnumDelete(PhoneNumbers *pn) {

@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
@@ -147,7 +148,7 @@ static bool isNumber(char const *number) {
         return false;
     }
 
-    int i = 0;
+    size_t i = 0;
     while (isdigit(number[i])) {
         i++;
     }
@@ -180,7 +181,7 @@ static bool areEqual(char const *num1, char const *num2) {
         return false;
     }
 
-    int i = 0;
+    size_t i = 0;
     while (isdigit(num1[i]) && isdigit(num2[i])) {
         if (num1[i] != num2[i]) {
             return false;
@@ -205,22 +206,38 @@ static bool checkNumbers(char const *num1, char const *num2) {
     return true;
 }
 
+/**
+ * @brief Obtains length of a number.
+ * Obtains length of the given number by counting its digits from the start.
+ * @param [in] num - number to get length of.
+ * @return Length of the number.
+ */
+static size_t length(const char *num) {
+    size_t len = 0;
+    while (isdigit(num[len])) {
+        len++;
+    }
+    return len;
+}
+
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
-    if (!checkNumbers(num1, num2)) {
+    if (pf == NULL || !checkNumbers(num1, num2)) {
         return false;
     }
 
     DNode *node = pf->root;
     DNode *beforeFirstAdded = NULL;
     DNode *firstAdded = NULL;
-    int i = 0;
+    size_t i = 0;
     int firstAddedDigit = 0;
     while (isdigit(num1[i])) {
         int digit = num1[i] - '0';
         if (node->next[digit] == NULL) {
             node->next[digit] = malloc(sizeof(DNode));
             if (node->next[digit] == NULL) {
-                beforeFirstAdded->next[firstAddedDigit] = NULL;
+                if (beforeFirstAdded != NULL) {
+                    beforeFirstAdded->next[firstAddedDigit] = NULL;
+                }
                 deleteIterative(firstAdded);
                 return false;
             }
@@ -240,19 +257,20 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     }
 
     char *result = NULL;
+    result = malloc(sizeof(char) * (length(num2) + 1));
+    if (result == NULL) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        return false;
+    }
     i = 0;
 
     while (isdigit(num2[i])) {
-        result = realloc(result, (i + 1) * sizeof(char));
-        if (result == NULL) {
-            beforeFirstAdded->next[firstAddedDigit] = NULL;
-            deleteIterative(firstAdded);
-            return false;
-        }
         result[i] = num2[i];
         i++;
     }
-    result = realloc(result, (i + 1) * sizeof(char));
     result[i] = '\0';
 
     free(node->forwardedNumber);
@@ -285,7 +303,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     DNode *beforePointToRemove = pf->root;
     DNode *lastPointToRemove = NULL;
     int pointToRemoveDigit = 0;
-    int i = 0;
+    size_t i = 0;
     while (isdigit(num[i])) {
         int digit = num[i] - '0';
         if (node->next[digit] == NULL) {
@@ -300,7 +318,9 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
         i++;
     }
 
-    beforePointToRemove->next[pointToRemoveDigit] = NULL;
+    if (beforePointToRemove != NULL) {
+        beforePointToRemove->next[pointToRemoveDigit] = NULL;
+    }
     deleteIterative(lastPointToRemove);
 }
 
@@ -313,17 +333,16 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
  */
 static bool copyNumber(char const *num, char **numberPtr) {
     char *result = NULL;
+    result = malloc(sizeof(char) * (length(num) + 1));
+    if (result == NULL) {
+        return false;
+    }
     size_t i = 0;
 
     while (isdigit(num[i])) {
-        result = realloc(result, (i + 1) * sizeof(char));
-        if (result == NULL) {
-            return false;
-        }
         result[i] = num[i];
         i++;
     }
-    result = realloc(result, (i + 1) * sizeof(char));
     result[i] = '\0';
 
     *numberPtr = result;
@@ -347,27 +366,23 @@ static bool copyParts(char const *num,
                       char **numberPtr) {
 
     char *result = NULL;
+    result = malloc(sizeof(char) * (length(forwardedPrefix) - lenOfOriginalPrefix + length(num) + 1));
+    if (result == NULL) {
+        return false;
+    }
     size_t i = 0;
+
     while (isdigit(forwardedPrefix[i])) {
-        result = realloc(result, (i + 1) * sizeof(char));
-        if (result == NULL) {
-            return false;
-        }
         result[i] = forwardedPrefix[i];
         i++;
     }
 
     size_t j = lenOfOriginalPrefix;
     while (isdigit(num[j])) {
-        result = realloc(result, (i + j - lenOfOriginalPrefix + 1) * sizeof(char));
-        if (result == NULL) {
-            return false;
-        }
         result[i] = num[j];
         i++;
         j++;
     }
-    result = realloc(result, (i + 1) * sizeof(char));
     result[i] = '\0';
 
     *numberPtr = result;

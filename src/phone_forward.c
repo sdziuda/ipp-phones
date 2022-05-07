@@ -8,6 +8,8 @@
 
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 10 /**< Number of different digits. */

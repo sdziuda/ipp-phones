@@ -1,7 +1,7 @@
 /** @file
  * Interface of the class storing phone forwarding.
  *
- * @author Marcin Peczarski <marpe@mimuw.edu.pl>
+ * @authors Marcin Peczarski <marpe@mimuw.edu.pl>, Szymon Dziuda <sd438422@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
  * @date 2022
  */

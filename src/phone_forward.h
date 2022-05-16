@@ -68,7 +68,7 @@ void phfwdRemove(PhoneForward *pf, char const *num);
  * @param[in] pf  – pointer to the structure containing phone forwarding information.
  * @param[in] num – pointer to the string containing the phone number to be forwarded.
  * @return Pointer to the structure containing the sequence of phone number or NULL if
- *         there was an allocation error.
+ *         there was an allocation error or the given structure is NULL.
  */
 PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num);
 

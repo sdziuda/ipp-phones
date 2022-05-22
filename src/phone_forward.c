@@ -12,7 +12,9 @@
 #include <stddef.h>
 #include "phone_forward.h"
 
-#define NUMBER_OF_DIGITS 10 /**< Number of different digits. */
+#define NUMBER_OF_DIGITS 12 /**< Number of different digits. */
+#define DECIMAL_STAR_REPRESENTATION 10 /**< The number which '*' represents. */
+#define DECIMAL_HASH_REPRESENTATION 11 /**< The number which '#' represents. */
 
 /**
  * @struct Node
@@ -22,7 +24,7 @@
  * @var Node::parent
  *      Pointer to the parent node.
  * @var Node::next
- *      Array of pointers to the 10 children nodes in the tree.
+ *      Array of pointers to the 12 children nodes in the tree.
  */
 struct Node {
     char *forwardedNumber;
@@ -142,6 +144,16 @@ void phfwdDelete(PhoneForward *pf) {
 }
 
 /**
+ * @brief Checks if the given char is a digit.
+ * Checks whether the given char is a representation of a digit (0-9, '*' or '#').
+ * @param [in] c - char to check.
+ * @return Value @p true if the given char is a digit, @p false otherwise.
+ */
+static bool isValidDigit(char const c) {
+    return isdigit(c) || c == '*' || c == '#';
+}
+
+/**
  * @brief Checks if the given string is a valid phone number.
  * @param [in] number - string to check
  * @return Value @p true if the string is a valid phone number.
@@ -153,7 +165,7 @@ static bool isNumber(char const *number) {
     }
 
     size_t i = 0;
-    while (isdigit(number[i])) {
+    while (isValidDigit(number[i])) {
         i++;
     }
 
@@ -179,7 +191,7 @@ static bool checkNumbers(char const *num1, char const *num2) {
     size_t i = 0;
     bool areEqual = true;
 
-    while (isdigit(num1[i]) && isdigit(num2[i])) {
+    while (isValidDigit(num1[i]) && isValidDigit(num2[i])) {
         if (num1[i] != num2[i]) {
             areEqual = false;
         }
@@ -191,7 +203,7 @@ static bool checkNumbers(char const *num1, char const *num2) {
     }
     size_t j = i;
 
-    while (isdigit(num1[i])) {
+    while (isValidDigit(num1[i])) {
         i++;
         areEqual = false;
     }
@@ -199,7 +211,7 @@ static bool checkNumbers(char const *num1, char const *num2) {
         return false;
     }
 
-    while (isdigit(num2[j])) {
+    while (isValidDigit(num2[j])) {
         j++;
         areEqual = false;
     }
@@ -221,10 +233,25 @@ static bool checkNumbers(char const *num1, char const *num2) {
  */
 static size_t length(const char *num) {
     size_t len = 0;
-    while (isdigit(num[len])) {
+    while (isValidDigit(num[len])) {
         len++;
     }
     return len;
+}
+
+/**
+ * @brief Obtains the decimal representation.
+ * Obtains the decimal representation of the given char.
+ * @param [in] c - digit to convert.
+ * @return Decimal representation of the digit.
+ */
+static int toDecimalRepresentation(char const c) {
+    if (c == '*') {
+        return DECIMAL_STAR_REPRESENTATION;
+    } else if (c == '#') {
+        return DECIMAL_HASH_REPRESENTATION;
+    }
+    return c - '0';
 }
 
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
@@ -237,8 +264,8 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     DNode *firstAdded = NULL;
     size_t i = 0;
     int firstAddedDigit = 0;
-    while (isdigit(num1[i])) {
-        int digit = num1[i] - '0';
+    while (isValidDigit(num1[i])) {
+        int digit = toDecimalRepresentation(num1[i]);
         if (node->next[digit] == NULL) {
             node->next[digit] = malloc(sizeof(DNode));
             if (node->next[digit] == NULL) {
@@ -274,7 +301,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     }
     i = 0;
 
-    while (isdigit(num2[i])) {
+    while (isValidDigit(num2[i])) {
         result[i] = num2[i];
         i++;
     }
@@ -311,8 +338,8 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     DNode *lastPointToRemove = NULL;
     int pointToRemoveDigit = 0;
     size_t i = 0;
-    while (isdigit(num[i])) {
-        int digit = num[i] - '0';
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
         if (node->next[digit] == NULL) {
             return;
         }
@@ -346,7 +373,7 @@ static bool copyNumber(char const *num, char **numberPtr) {
     }
     size_t i = 0;
 
-    while (isdigit(num[i])) {
+    while (isValidDigit(num[i])) {
         result[i] = num[i];
         i++;
     }
@@ -379,13 +406,13 @@ static bool copyParts(char const *num,
     }
     size_t i = 0;
 
-    while (isdigit(forwardedPrefix[i])) {
+    while (isValidDigit(forwardedPrefix[i])) {
         result[i] = forwardedPrefix[i];
         i++;
     }
 
     size_t j = lenOfOriginalPrefix;
-    while (isdigit(num[j])) {
+    while (isValidDigit(num[j])) {
         result[i] = num[j];
         i++;
         j++;
@@ -414,8 +441,8 @@ static void findPrefix(PhoneForward const *pf,
     DNode *node = pf->root;
     size_t i = 0;
 
-    while (isdigit(num[i])) {
-        int digit = num[i] - '0';
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
 
         if (node->next[digit] == NULL) {
             break;

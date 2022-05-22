@@ -13,8 +13,8 @@
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 12 /**< Number of different digits. */
-#define DECIMAL_STAR_REPRESENTATION 10 /**< The number which '*' represents. */
-#define DECIMAL_HASH_REPRESENTATION 11 /**< The number which '#' represents. */
+#define DECIMAL_STAR_REPRESENTATION 10 /**< The digit which '*' represents. */
+#define DECIMAL_HASH_REPRESENTATION 11 /**< The digit which '#' represents. */
 
 /**
  * @struct Node

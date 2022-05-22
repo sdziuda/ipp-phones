@@ -67,6 +67,9 @@ struct PhoneNumbers {
 
 PhoneForward *phfwdNew(void) {
     PhoneForward *pf = malloc(sizeof(PhoneForward));
+    if (pf == NULL) {
+        return NULL;
+    }
 
     pf->root = malloc(sizeof(DNode));
     if (pf->root == NULL) {
@@ -160,48 +163,51 @@ static bool isNumber(char const *number) {
     return true;
 }
 
-/**
- * @brief Checks whether the given numbers are equal.
- * @param [in] num1 - first number.
- * @param [in] num2 - second number.
- * @return Value @p true if the numbers are equal.
- *         Value @p false otherwise.
- */
-static bool areEqual(char const *num1, char const *num2) {
-    size_t len1 = 0;
-    size_t len2 = 0;
-
-    while (isdigit(num1[len1])) {
-        len1++;
-    }
-    while (isdigit(num2[len2])) {
-        len2++;
-    }
-
-    if (len1 != len2) {
-        return false;
-    }
-
-    size_t i = 0;
-    while (isdigit(num1[i]) && isdigit(num2[i])) {
-        if (num1[i] != num2[i]) {
-            return false;
-        }
-        i++;
-    }
-
-    return true;
-}
 
 /**
- * @brief Checks whether the numbers are suitable for forwarding.
+ * @brief Checks whether the strings are suitable for forwarding (i.e. they are numbers and aren't the same).
  * @param [in] num1 - first number.
  * @param [in] num2 - second number.
  * @return Value @p true if they are suitable.
  *         Value @p false otherwise.
  */
 static bool checkNumbers(char const *num1, char const *num2) {
-    if (!isNumber(num1) || !isNumber(num2) || areEqual(num1, num2)) {
+    if (num1 == NULL || num2 == NULL) {
+        return false;
+    }
+
+    size_t i = 0;
+    bool areEqual = true;
+
+    while (isdigit(num1[i]) && isdigit(num2[i])) {
+        if (num1[i] != num2[i]) {
+            areEqual = false;
+        }
+        i++;
+    }
+
+    if (i == 0) {
+        return false;
+    }
+    size_t j = i;
+
+    while (isdigit(num1[i])) {
+        i++;
+        areEqual = false;
+    }
+    if (num1[i] != '\0') {
+        return false;
+    }
+
+    while (isdigit(num2[j])) {
+        j++;
+        areEqual = false;
+    }
+    if (num2[j] != '\0') {
+        return false;
+    }
+
+    if (areEqual) {
         return false;
     }
     return true;
@@ -479,6 +485,7 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     }
 
     if (!addPhoneNumber(pn, &number)) {
+        free(number);
         free(pn->array);
         free(pn);
         return NULL;

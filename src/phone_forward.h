@@ -25,7 +25,7 @@ struct PhoneNumbers;
 typedef struct PhoneNumbers PhoneNumbers; /**< Type of structure containing a sequence of phone numbers. */
 
 /** @brief Creates new structure.
- * Creates new structure containing without any phone forwarding information.
+ * Creates new structure without any phone forwarding information.
  * @return Pointer to the new structure or NULL if there was an allocation error.
  */
 PhoneForward * phfwdNew(void);

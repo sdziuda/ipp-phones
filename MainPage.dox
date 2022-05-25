@@ -11,4 +11,6 @@ This year's task is to implement operations on phone numbers.
 
 First part of the task is to implement functions regarding phone forwarding from the provided file phone_forward.h.
 
+Second part of the task is to add '*' and '#' as supported digits and to implement function phfwdReverse().
+
 */

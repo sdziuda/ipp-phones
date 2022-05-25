@@ -19,28 +19,33 @@
 /**
  * @struct Node
  * @brief Node of the tree of phone forwarding.
- * @var Node::forwardedNumber
- *      String of digits containing the number to which the route from root to the current node is forwarded.
+ * @var Node::numbers
+ *      Vector of numbers, for the forwarding tree it will hold only one number (the one to which the route from
+ *      root to the current node is forwarded), for the reverse tree it will hold all numbers which are
+ *      forwarded to that number.
  * @var Node::parent
  *      Pointer to the parent node.
  * @var Node::next
  *      Array of pointers to the 12 children nodes in the tree.
  */
 struct Node {
-    char *forwardedNumber;
+    PhoneNumbers *numbers;
     struct Node *parent;
     struct Node *next[NUMBER_OF_DIGITS];
 };
-typedef struct Node DNode; /**< Node of the decimal tree. */
+typedef struct Node DNode; /**< Node of the forwarding tree. */
 
 /**
  * @struct PhoneForward phone_forward.h
- * @brief Structure containing the root of the tree of phone forwarding.
+ * @brief Structure containing the root of the tree of phone forwarding and reverse tree.
  * @var PhoneForward::root
  *      Pointer to the root of the tree.
+ * @var PhoneForward::reverseRoot
+ *      Pointer to the root of the tree of reverse phone forwarding.
  */
 struct PhoneForward {
     DNode *root;
+    DNode *reverseRoot;
 };
 
 /**
@@ -56,16 +61,39 @@ typedef struct PhoneNumber PNumber; /**< A single phone number. */
 
 /**
  * @struct PhoneNumbers phone_forward.h
- * @brief Structure containing an array of phone numbers.
+ * @brief Vector containing an array of phone numbers.
  * @var PhoneNumbers::array
  *      Array of phone numbers.
  * @var PhoneNumbers::size
  *      Number of elements in the array.
+ * @var PhoneNumbers::capacity
+ *      Maximum number of elements in the array.
  */
 struct PhoneNumbers {
     PNumber *array;
     size_t size;
+    size_t capacity;
 };
+
+/**
+ * @brief Creates a new Node.
+ * Allocates memory for the node and initializes it.
+ * @return Pointer to the new node or NULL if there was an allocation error.
+ */
+static DNode *nodeNew(void) {
+    DNode *node = malloc(sizeof(DNode));
+    if (node == NULL) {
+        return NULL;
+    }
+
+    node->numbers = NULL;
+    node->parent = NULL;
+    for (int i = 0; i < NUMBER_OF_DIGITS; ++i) {
+        node->next[i] = NULL;
+    }
+
+    return node;
+}
 
 PhoneForward *phfwdNew(void) {
     PhoneForward *pf = malloc(sizeof(PhoneForward));
@@ -73,15 +101,17 @@ PhoneForward *phfwdNew(void) {
         return NULL;
     }
 
-    pf->root = malloc(sizeof(DNode));
+    pf->root = nodeNew();
     if (pf->root == NULL) {
         free(pf);
         return NULL;
     }
-    pf->root->parent = NULL;
-    pf->root->forwardedNumber = NULL;
-    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
-        pf->root->next[i] = NULL;
+
+    pf->reverseRoot = nodeNew();
+    if (pf->reverseRoot == NULL) {
+        free(pf->root);
+        free(pf);
+        return NULL;
     }
 
     return pf;
@@ -114,7 +144,7 @@ static void deleteIterative(DNode *node) {
         if (!hasChild) {
             DNode *parent = current->parent;
             if (parent == NULL) {
-                free(current->forwardedNumber);
+                phnumDelete(current->numbers);
                 free(current);
                 break;
             }
@@ -126,7 +156,7 @@ static void deleteIterative(DNode *node) {
                 }
             }
 
-            free(current->forwardedNumber);
+            phnumDelete(current->numbers);
             free(current);
             current = parent;
         }
@@ -139,6 +169,7 @@ void phfwdDelete(PhoneForward *pf) {
     }
 
     deleteIterative(pf->root);
+    deleteIterative(pf->reverseRoot);
 
     free(pf);
 }
@@ -254,44 +285,109 @@ static int toDecimalRepresentation(char const c) {
     return c - '0';
 }
 
-bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
-    if (pf == NULL || !checkNumbers(num1, num2)) {
-        return false;
-    }
-
-    DNode *node = pf->root;
-    DNode *beforeFirstAdded = NULL;
-    DNode *firstAdded = NULL;
+/**
+ * @brief Obtains the node at the end of the route.
+ * Obtains the node which represents the last digit of the given number. If there was any allocation error,
+ * the function will delete all the nodes it has already added on the route to the current node and return NULL.
+ * This function will also update values pointed by the given pointers.
+ * @param [in] start - pointer to the node we want to start looking from.
+ * @param [in, out] beforeFirstAddedPtr - pointer to the node before the first node added by this function.
+ * @param [in, out] firstAddedPtr - pointer to the first node added by this function.
+ * @param [in, out] firstAddedDigit - pointer to the digit of the first node added by this function.
+ * @param [in] num - number to get the last digit of.
+ * @return pointer to the node at the end of the route or NULL if there was an allocation error.
+ */
+static DNode *getEndNode(DNode *start, DNode **beforeFirstAddedPtr, DNode **firstAddedPtr,
+                         int *firstAddedDigit, char const *num) {
+    DNode *result = start;
+    DNode *beforeFirstAdded = *beforeFirstAddedPtr;
+    DNode *firstAdded = *firstAddedPtr;
     size_t i = 0;
-    int firstAddedDigit = 0;
-    while (isValidDigit(num1[i])) {
-        int digit = toDecimalRepresentation(num1[i]);
-        if (node->next[digit] == NULL) {
-            node->next[digit] = malloc(sizeof(DNode));
-            if (node->next[digit] == NULL) {
+
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
+        if (result->next[digit] == NULL) {
+            result->next[digit] = nodeNew();
+            if (result->next[digit] == NULL) {
                 if (beforeFirstAdded != NULL) {
-                    beforeFirstAdded->next[firstAddedDigit] = NULL;
+                    beforeFirstAdded->next[*firstAddedDigit] = NULL;
                 }
                 deleteIterative(firstAdded);
-                return false;
+                return NULL;
             }
-            node->next[digit]->parent = node;
-            node->next[digit]->forwardedNumber = NULL;
-            for (int j = 0; j < NUMBER_OF_DIGITS; j++) {
-                node->next[digit]->next[j] = NULL;
-            }
+
+            result->next[digit]->parent = result;
             if (firstAdded == NULL) {
-                beforeFirstAdded = node;
-                firstAddedDigit = digit;
-                firstAdded = node->next[digit];
+                beforeFirstAdded = result;
+                (*firstAddedDigit) = digit;
+                firstAdded = result->next[digit];
             }
         }
-        node = node->next[digit];
+        result = result->next[digit];
         i++;
     }
 
+    *beforeFirstAddedPtr = beforeFirstAdded;
+    *firstAddedPtr = firstAdded;
+    return result;
+}
+
+/**
+ * @brief Creates new PhoneNumbers structure.
+ * Creates new structure without any numbers.
+ * @return Pointer to the new structure or NULL if there was an allocation error.
+ */
+static PhoneNumbers *phnumNew(void) {
+    PhoneNumbers *numbers = malloc(sizeof(struct PhoneNumbers));
+    if (numbers == NULL) {
+        return NULL;
+    }
+
+    numbers->array = NULL;
+    numbers->size = 0;
+    numbers->capacity = 1;
+    return numbers;
+}
+
+/** @brief Adds phone number to the vector.
+ * Allocates memory (if needed) for the new number and adds it to the array.
+ * @param [in, out] pNumbers - pointer to the structure of phone numbers.
+ * @param [in] number - pointer to the number to add.
+ * @return Value @p true if the number was added successfully.
+ *         Value @p false if there was an allocation error.
+ */
+static bool addPhoneNumber(PhoneNumbers *pNumbers, char **number) {
+    pNumbers->size++;
+
+    if (pNumbers->size == pNumbers->capacity) {
+        pNumbers->capacity *= 2;
+        pNumbers->array = realloc(pNumbers->array, pNumbers->capacity * sizeof(PNumber));
+        if (pNumbers->array == NULL) {
+            pNumbers->size--;
+            return false;
+        }
+    }
+
+    pNumbers->array[pNumbers->size - 1].number = *number;
+    return true;
+}
+
+/**
+ * @brief Overwrites the forwarding in the node.
+ * This function will overwrite the forwarding in the given node (or create it if it doesn't exist). If there was an
+ * allocation error, the function will also delete all the nodes that were created down to this node.
+ * @param [in] node - pointer to the node to overwrite the forwarding in.
+ * @param [in, out] beforeFirstAdded - pointer to the node before the first added node.
+ * @param [in, out] firstAdded - pointer to the first added node.
+ * @param [in] firstAddedDigit - digit of the first added node.
+ * @param [in] num - the number to overwrite current number in the node with.
+ * @return Value @p true if the number was overwritten successfully.
+ *         Value @p false if there was an allocation error.
+ */
+static bool overWriteForwarding(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, int firstAddedDigit,
+                                char const *num) {
     char *result = NULL;
-    result = malloc(sizeof(char) * (length(num2) + 1));
+    result = malloc(sizeof(char) * (length(num) + 1));
     if (result == NULL) {
         if (beforeFirstAdded != NULL) {
             beforeFirstAdded->next[firstAddedDigit] = NULL;
@@ -299,16 +395,118 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         deleteIterative(firstAdded);
         return false;
     }
-    i = 0;
+    size_t i = 0;
 
-    while (isValidDigit(num2[i])) {
-        result[i] = num2[i];
+    while (isValidDigit(num[i])) {
+        result[i] = num[i];
         i++;
     }
     result[i] = '\0';
 
-    free(node->forwardedNumber);
-    node->forwardedNumber = result;
+    phnumDelete(node->numbers);
+
+    node->numbers = phnumNew();
+    if (node->numbers == NULL) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        free(result);
+        return false;
+    }
+
+    if (!addPhoneNumber(node->numbers, &result)) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        free(result);
+        return false;
+    }
+    return true;
+}
+
+/**
+ * @brief Adds the number to the node.
+ * This function will add the (reverse) number to the vector of numbers in the given node (and create the vector if
+ * it doesn't exist). If there was an allocation error, the function will also delete all the nodes that were created
+ * down to this node.
+ * @param [in] node - pointer to the node to add the number to.
+ * @param [in, out] beforeFirstAdded - pointer to the node before the first added node in the reverse tree.
+ * @param [in, out] firstAdded - pointer to the first added node in the reverse tree.
+ * @param [in] firstAddedDigit - digit of the first added node in the reverse tree.
+ * @param [in] num - the number to add to the node.
+ * @return Value @p true if the number was added successfully.
+ *         Value @p false if there was an allocation error.
+ */
+static bool addReverse(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, int firstAddedDigit, char const *num) {
+    char *result = NULL;
+    result = malloc(sizeof(char) * (length(num) + 1));
+    if (result == NULL) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        return false;
+    }
+    size_t i = 0;
+
+    while (isValidDigit(num[i])) {
+        result[i] = num[i];
+        i++;
+    }
+    result[i] = '\0';
+
+    if (node->numbers == NULL) {
+        node->numbers = phnumNew();
+        if (node->numbers == NULL) {
+            if (beforeFirstAdded != NULL) {
+                beforeFirstAdded->next[firstAddedDigit] = NULL;
+            }
+            deleteIterative(firstAdded);
+            free(result);
+            return false;
+        }
+    }
+
+    if (!addPhoneNumber(node->numbers, &result)) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        free(result);
+        return false;
+    }
+    return true;
+}
+
+bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
+    if (pf == NULL || !checkNumbers(num1, num2)) {
+        return false;
+    }
+
+    DNode *beforeFirstAdded = NULL;
+    DNode *firstAdded = NULL;
+    int firstAddedDigit;
+    DNode *node = getEndNode(pf->root, &beforeFirstAdded, &firstAdded, &firstAddedDigit, num1);
+    if (node == NULL || !overWriteForwarding(node, beforeFirstAdded, firstAdded, firstAddedDigit, num2)) {
+        return false;
+    }
+
+    DNode *beforeFirstReverseAdded = NULL;
+    DNode *firstReverseAdded = NULL;
+    int firstReverseAddedDigit;
+    DNode *nodeReverse = getEndNode(pf->reverseRoot, &beforeFirstReverseAdded, &firstReverseAdded,
+                                    &firstReverseAddedDigit, num2);
+
+    if (nodeReverse == NULL || !addReverse(nodeReverse, beforeFirstReverseAdded, firstReverseAdded,
+                                           firstReverseAddedDigit, num1)) {
+        if (beforeFirstAdded != NULL) {
+            beforeFirstAdded->next[firstAddedDigit] = NULL;
+        }
+        deleteIterative(firstAdded);
+        return false;
+    }
     return true;
 }
 
@@ -343,7 +541,7 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
         if (node->next[digit] == NULL) {
             return;
         }
-        if (node->forwardedNumber != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
             beforePointToRemove = node;
             pointToRemoveDigit = digit;
             lastPointToRemove = node->next[digit];
@@ -394,11 +592,7 @@ static bool copyNumber(char const *num, char **numberPtr) {
  * @return Value @p true if the number was created successfully.
  *         Value @p false if there was allocation error.
  */
-static bool copyParts(char const *num,
-                      char const *forwardedPrefix,
-                      size_t lenOfOriginalPrefix,
-                      char **numberPtr) {
-
+static bool copyParts(char const *num, char const *forwardedPrefix, size_t lenOfOriginalPrefix, char **numberPtr) {
     char *result = NULL;
     result = malloc(sizeof(char) * (length(forwardedPrefix) - lenOfOriginalPrefix + length(num) + 1));
     if (result == NULL) {
@@ -433,11 +627,8 @@ static bool copyParts(char const *num,
  * @param [in, out] maxForwardedPrefix - number the longest prefix is forwarded to.
  * @param [in, out] lenOfMaxOriginalPrefix - length of the longest prefix.
  */
-static void findPrefix(PhoneForward const *pf,
-                       char const *num,
-                       char **maxForwardedPrefix,
+static void findPrefix(PhoneForward const *pf, char const *num, char **maxForwardedPrefix,
                        size_t *lenOfMaxOriginalPrefix) {
-
     DNode *node = pf->root;
     size_t i = 0;
 
@@ -451,29 +642,11 @@ static void findPrefix(PhoneForward const *pf,
         node = node->next[digit];
         i++;
 
-        if (node->forwardedNumber != NULL) {
-            (*maxForwardedPrefix) = node->forwardedNumber;
+        if (node->numbers != NULL && node->numbers->size > 0) {
+            (*maxForwardedPrefix) = node->numbers->array[0].number;
             (*lenOfMaxOriginalPrefix) = i;
         }
     }
-}
-
-/** @brief Adds phone number to the array.
- * Allocates memory for the new number and adds it to the array.
- * @param [in, out] pNumbers - pointer to the structure of phone numbers.
- * @param [in] number - pointer to the number to add.
- * @return Value @p true if the number was added successfully.
- *         Value @p false if there was allocation error.
- */
-static bool addPhoneNumber(PhoneNumbers *pNumbers, char **number) {
-    pNumbers->size++;
-    pNumbers->array = realloc(pNumbers->array, pNumbers->size * sizeof(PNumber));
-    if (pNumbers->array == NULL) {
-        return false;
-    }
-
-    pNumbers->array[pNumbers->size - 1].number = *number;
-    return true;
 }
 
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
@@ -481,12 +654,10 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
         return NULL;
     }
 
-    PhoneNumbers *pn = malloc(sizeof(PhoneNumbers));
+    PhoneNumbers *pn = phnumNew();
     if (pn == NULL) {
         return NULL;
     }
-    pn->array = NULL;
-    pn->size = 0;
 
     if (!isNumber(num)) {
         return pn;
@@ -499,22 +670,19 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     char *number = NULL;
     if (maxForwardedPrefix == NULL) {
         if (!copyNumber(num, &number)) {
-            free(pn->array);
-            free(pn);
+            phnumDelete(pn);
             return NULL;
         }
     } else {
         if (!copyParts(num, maxForwardedPrefix, lenOfMaxOriginalPrefix, &number)) {
-            free(pn->array);
-            free(pn);
+            phnumDelete(pn);
             return NULL;
         }
     }
 
     if (!addPhoneNumber(pn, &number)) {
         free(number);
-        free(pn->array);
-        free(pn);
+        phnumDelete(pn);
         return NULL;
     }
     return pn;
@@ -550,6 +718,8 @@ char const *phnumGet(PhoneNumbers const *pn, size_t idx) {
     if (pn == NULL || idx >= pn->size) {
         return NULL;
     }
+
+    //qsort(pn->array, pn->size, sizeof(PNumber), compareNumbers);
 
     return pn->array[idx].number;
 }

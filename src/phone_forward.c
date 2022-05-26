@@ -228,6 +228,26 @@ static bool areEqual(char const *num1, char const *num2) {
 }
 
 /**
+ * @brief Checks if one number is a prefix of another.
+ * @param [in] num - number to check.
+ * @param [in] prefix - prefix to check.
+ * @return Value @p true if the number is a prefix of the other one.
+ *         Value @p false otherwise.
+ */
+static bool isPrefix(char const *num, char const *prefix) {
+    size_t i = 0;
+
+    while (isValidDigit(num[i]) && isValidDigit(prefix[i])) {
+        if (num[i] != prefix[i]) {
+            return false;
+        }
+        i++;
+    }
+
+    return prefix[i] == '\0';
+}
+
+/**
  * @brief Checks whether the strings are suitable for forwarding (i.e. they are numbers and aren't the same).
  * @param [in] num1 - first number.
  * @param [in] num2 - second number.
@@ -678,6 +698,131 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     return true;
 }
 
+/**
+ * @brief Removed all the numbers containing the given prefix.
+ * This function is used to delete all phone numbers that contain the given prefix from the vector. If there are no
+ * numbers left in the vector, the vector is deleted.
+ * @param [in, out] pNumbersPtr - pointer to the vector of phone numbers.
+ * @param [in] prefix - the prefix of numbers we want to remove.
+ */
+static void phnumRemoveWithPrefix(PhoneNumbers **pNumbersPtr, char const *prefix) {
+    PhoneNumbers *pNumbers = *pNumbersPtr;
+    size_t i = 0;
+    while (i < pNumbers->size) {
+        if (isPrefix(pNumbers->array[i].number, prefix)) {
+            free(pNumbers->array[i].number);
+            pNumbers->array[i] = pNumbers->array[pNumbers->size - 1];
+            pNumbers->size--;
+        } else {
+            i++;
+        }
+    }
+
+    if (pNumbers->size == 0) {
+        free(pNumbers->array);
+        free(pNumbers);
+        pNumbers = NULL;
+        *pNumbersPtr = NULL;
+        return;
+    }
+}
+
+/**
+ * @brief Removes numbers with certain prefix from the reverse trees.
+ * This function will find the end of the route in the reverse tree, represented by the given number. Then it will
+ * remove all the numbers that contain the given prefix from the vector. If there are no numbers left in the vector,
+ * this function will delete all nodes down to the end of the route (starting from the point that can be safely
+ * deleted).
+ * @param [in, out] pf - pointer to the structure that contains the reverse tree.
+ * @param [in] num - the number that represents the route.
+ * @param [in] prefix - the prefix of numbers we want to remove.
+ */
+static void removeReverseWithPrefix(PhoneForward const *pf, char const *num, char const *prefix) {
+    DNode *node = pf->reverseRoot;
+    DNode *beforePointToRemove = pf->reverseRoot;
+    DNode *lastPointToRemove = NULL;
+    int pointToRemoveDigit = 0;
+    size_t i = 0;
+
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
+        if (node->next[digit] == NULL) {
+            return;
+        }
+        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+            beforePointToRemove = node;
+            pointToRemoveDigit = digit;
+            lastPointToRemove = node->next[digit];
+        }
+        node = node->next[digit];
+        i++;
+    }
+
+    phnumRemoveWithPrefix(&node->numbers, prefix);
+
+    if (node->numbers == NULL) {
+        if (beforePointToRemove != NULL) {
+            beforePointToRemove->next[pointToRemoveDigit] = NULL;
+        }
+        deleteIterative(lastPointToRemove);
+    }
+}
+
+/**
+ * @brief Removes nodes from the forward tree and numbers with certain prefix from the reverse tree.
+ * This function will delete all the nodes under the given node and if any node contain a number, the function will
+ * start looking in the reverse tree for numbers that contain the given prefix using function
+ * @ref removeReverseWithPrefix.
+ * @param [in, out] pf - pointer to the structure that contains the forward tree and the reverse tree.
+ * @param [in, out] node - pointer to the node that we want to start deleting from.
+ * @param [in] prefix - the prefix of numbers we want to remove.
+ */
+static void deleteIterativeWithReverse(PhoneForward const *pf, DNode *node, char const *prefix) {
+    DNode *current = node;
+    if (current == NULL) {
+        return;
+    }
+    current->parent = NULL;
+
+    while (current != NULL) {
+        bool hasChild = false;
+
+        for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+            if (current->next[i]) {
+                current = current->next[i];
+                hasChild = true;
+                break;
+            }
+        }
+
+        if (!hasChild) {
+            DNode *parent = current->parent;
+            if (parent == NULL) {
+                if (current->numbers != NULL && current->numbers->size > 0) {
+                    removeReverseWithPrefix(pf, current->numbers->array[0].number, prefix);
+                }
+                phnumDelete(current->numbers);
+                free(current);
+                break;
+            }
+
+            for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+                if (parent->next[i] == current) {
+                    parent->next[i] = NULL;
+                    break;
+                }
+            }
+
+            if (current->numbers != NULL && current->numbers->size > 0) {
+                removeReverseWithPrefix(pf, current->numbers->array[0].number, prefix);
+            }
+            phnumDelete(current->numbers);
+            free(current);
+            current = parent;
+        }
+    }
+}
+
 void phfwdRemove(PhoneForward *pf, char const *num) {
     if (pf == NULL || !isNumber(num)) {
         return;
@@ -705,7 +850,12 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     if (beforePointToRemove != NULL) {
         beforePointToRemove->next[pointToRemoveDigit] = NULL;
     }
-    deleteIterative(lastPointToRemove);
+    deleteIterativeWithReverse(pf, lastPointToRemove, num);
+
+    /*printf("Forward:\n");
+    printAll(pf->root);
+    printf("Reverse:\n");
+    printAll(pf->reverseRoot);*/
 }
 
 /**

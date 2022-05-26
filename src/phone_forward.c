@@ -10,6 +10,7 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include "phone_forward.h"
 
 #define NUMBER_OF_DIGITS 12 /**< Number of different digits. */
@@ -206,6 +207,25 @@ static bool isNumber(char const *number) {
     return true;
 }
 
+/**
+ * @brief Checks if two numbers are equal.
+ * @param [in] num1 - first number to compare.
+ * @param [in] num2 - second number to compare.
+ * @return Value @p true if the two numbers are equal.
+ *         Value @p false otherwise.
+ */
+static bool areEqual(char const *num1, char const *num2) {
+    size_t i = 0;
+
+    while (isValidDigit(num1[i]) && isValidDigit(num2[i])) {
+        if (num1[i] != num2[i]) {
+            return false;
+        }
+        i++;
+    }
+
+    return num1[i] == '\0' && num2[i] == '\0';
+}
 
 /**
  * @brief Checks whether the strings are suitable for forwarding (i.e. they are numbers and aren't the same).
@@ -220,11 +240,11 @@ static bool checkNumbers(char const *num1, char const *num2) {
     }
 
     size_t i = 0;
-    bool areEqual = true;
+    bool equal = true;
 
     while (isValidDigit(num1[i]) && isValidDigit(num2[i])) {
         if (num1[i] != num2[i]) {
-            areEqual = false;
+            equal = false;
         }
         i++;
     }
@@ -236,7 +256,7 @@ static bool checkNumbers(char const *num1, char const *num2) {
 
     while (isValidDigit(num1[i])) {
         i++;
-        areEqual = false;
+        equal = false;
     }
     if (num1[i] != '\0') {
         return false;
@@ -244,13 +264,13 @@ static bool checkNumbers(char const *num1, char const *num2) {
 
     while (isValidDigit(num2[j])) {
         j++;
-        areEqual = false;
+        equal = false;
     }
     if (num2[j] != '\0') {
         return false;
     }
 
-    if (areEqual) {
+    if (equal) {
         return false;
     }
     return true;
@@ -283,6 +303,31 @@ static int toDecimalRepresentation(char const c) {
         return DECIMAL_HASH_REPRESENTATION;
     }
     return c - '0';
+}
+
+/**
+ * @brief Copies the number to the given buffer.
+ * @param [in] num - the number to copy.
+ * @param [in, out] numberPtr - the buffer to copy the number to.
+ * @return Value @p true if the number was copied successfully.
+ *         Value @p false if there was allocation error.
+ */
+static bool copyNumber(char const *num, char **numberPtr) {
+    char *result = NULL;
+    result = malloc(sizeof(char) * (length(num) + 1));
+    if (result == NULL) {
+        return false;
+    }
+    size_t i = 0;
+
+    while (isValidDigit(num[i])) {
+        result[i] = num[i];
+        i++;
+    }
+    result[i] = '\0';
+
+    *numberPtr = result;
+    return true;
 }
 
 /**
@@ -333,6 +378,22 @@ static DNode *getEndNode(DNode *start, DNode **beforeFirstAddedPtr, DNode **firs
 }
 
 /**
+ * @brief Finds the number od children for given node.
+ * Finds all children that are not NULL and returns the number of them.
+ * @param [in] node the node to find the number of children for.
+ * @return the number of children.
+ */
+static int numberOfChildren(DNode const *node) {
+    int sum = 0;
+    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+        if (node->next[i] != NULL) {
+            sum++;
+        }
+    }
+    return sum;
+}
+
+/**
  * @brief Creates new PhoneNumbers structure.
  * Creates new structure without any numbers.
  * @return Pointer to the new structure or NULL if there was an allocation error.
@@ -356,7 +417,7 @@ static PhoneNumbers *phnumNew(void) {
  * @return Value @p true if the number was added successfully.
  *         Value @p false if there was an allocation error.
  */
-static bool addPhoneNumber(PhoneNumbers *pNumbers, char **number) {
+static bool phnumAdd(PhoneNumbers *pNumbers, char **number) {
     pNumbers->size++;
 
     if (pNumbers->size == pNumbers->capacity) {
@@ -381,11 +442,12 @@ static bool addPhoneNumber(PhoneNumbers *pNumbers, char **number) {
  * @param [in, out] firstAdded - pointer to the first added node.
  * @param [in] firstAddedDigit - digit of the first added node.
  * @param [in] num - the number to overwrite current number in the node with.
+ * @param [in, out] overWritten - pointer to the string representing a number that was overwritten.
  * @return Value @p true if the number was overwritten successfully.
  *         Value @p false if there was an allocation error.
  */
 static bool overWriteForwarding(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, int firstAddedDigit,
-                                char const *num) {
+                                char const *num, char **overWritten) {
     char *result = NULL;
     result = malloc(sizeof(char) * (length(num) + 1));
     if (result == NULL) {
@@ -403,10 +465,8 @@ static bool overWriteForwarding(DNode *node, DNode *beforeFirstAdded, DNode *fir
     }
     result[i] = '\0';
 
-    phnumDelete(node->numbers);
-
-    node->numbers = phnumNew();
-    if (node->numbers == NULL) {
+    if (node->numbers != NULL && node->numbers->size > 0 &&
+        !copyNumber(node->numbers->array[0].number, overWritten)) {
         if (beforeFirstAdded != NULL) {
             beforeFirstAdded->next[firstAddedDigit] = NULL;
         }
@@ -415,11 +475,16 @@ static bool overWriteForwarding(DNode *node, DNode *beforeFirstAdded, DNode *fir
         return false;
     }
 
-    if (!addPhoneNumber(node->numbers, &result)) {
+    phnumDelete(node->numbers);
+
+    node->numbers = phnumNew();
+    if (node->numbers == NULL || !phnumAdd(node->numbers, &result)) {
         if (beforeFirstAdded != NULL) {
             beforeFirstAdded->next[firstAddedDigit] = NULL;
         }
         deleteIterative(firstAdded);
+        free(*overWritten);
+        *overWritten = NULL;
         free(result);
         return false;
     }
@@ -469,7 +534,7 @@ static bool addReverse(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, 
         }
     }
 
-    if (!addPhoneNumber(node->numbers, &result)) {
+    if (!phnumAdd(node->numbers, &result)) {
         if (beforeFirstAdded != NULL) {
             beforeFirstAdded->next[firstAddedDigit] = NULL;
         }
@@ -480,6 +545,96 @@ static bool addReverse(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, 
     return true;
 }
 
+/**
+ * @brief Removes number from the vector.
+ * This function will remove the number from the given vector. If the vector is then empty it will delete the vector
+ * structure.
+ * @param [in, out] pNumbersPtr - pointer to the vector to remove the number from.
+ * @param [in] num - the number to remove from the vector.
+ */
+static void phnumRemove(PhoneNumbers **pNumbersPtr, char const *num) {
+    PhoneNumbers *pNumbers = *pNumbersPtr;
+    size_t i;
+    for (i = 0; i < pNumbers->size; i++) {
+        if (areEqual(pNumbers->array[i].number, num)) {
+            free(pNumbers->array[i].number);
+            pNumbers->size--;
+        }
+    }
+
+    if (pNumbers->size == 0) {
+        free(pNumbers->array);
+        free(pNumbers);
+        pNumbers = NULL;
+        *pNumbersPtr = NULL;
+        return;
+    }
+
+    for (size_t j = i; j < pNumbers->size; j++) {
+        pNumbers->array[j] = pNumbers->array[j + 1];
+    }
+}
+
+/**
+ * @brief Removes a number from the reverse tree.
+ * This function will go to the node at the end of route represent the number and remove the number from the vector
+ * in that node. If the vector is then empty it will delete the vector structure and the route to the node (starting
+ * from the point that can be safely deleted).
+ * @param [in, out] pf - pointer to structure that holds the reverse tree.
+ * @param [in] num1 - the number representing the route to the node.
+ * @param [in] num2 - the number we want to remove from the vector.
+ */
+static void removeReverse(PhoneForward const *pf, char const *num1, char const *num2) {
+    DNode *node = pf->reverseRoot;
+    DNode *beforePointToRemove = pf->reverseRoot;
+    DNode *lastPointToRemove = NULL;
+    int pointToRemoveDigit = 0;
+    size_t i = 0;
+
+    while (isValidDigit(num1[i])) {
+        int digit = toDecimalRepresentation(num1[i]);
+        if (node->next[digit] == NULL) {
+            return;
+        }
+        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+            beforePointToRemove = node;
+            pointToRemoveDigit = digit;
+            lastPointToRemove = node->next[digit];
+        }
+        node = node->next[digit];
+        i++;
+    }
+
+    phnumRemove(&node->numbers, num2);
+
+    if (node->numbers == NULL) {
+        if (beforePointToRemove != NULL) {
+            beforePointToRemove->next[pointToRemoveDigit] = NULL;
+        }
+        deleteIterative(lastPointToRemove);
+    }
+}
+
+static void printPhnum(PhoneNumbers const *pNumbers) {
+    for (size_t i = 0; i < pNumbers->size; i++) {
+        printf("%s ", pNumbers->array[i].number);
+    }
+    printf("\n");
+}
+
+static void printAll(DNode *node) {
+    if (node == NULL) {
+        return;
+    }
+    if (node->numbers != NULL) {
+        printPhnum(node->numbers);
+    }
+    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
+        if (node->next[i] != NULL) printf("\t%d: ", i);
+        printAll(node->next[i]);
+    }
+}
+
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     if (pf == NULL || !checkNumbers(num1, num2)) {
         return false;
@@ -488,10 +643,17 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     DNode *beforeFirstAdded = NULL;
     DNode *firstAdded = NULL;
     int firstAddedDigit;
+    char *overWrittenNumber = NULL;
     DNode *node = getEndNode(pf->root, &beforeFirstAdded, &firstAdded, &firstAddedDigit, num1);
-    if (node == NULL || !overWriteForwarding(node, beforeFirstAdded, firstAdded, firstAddedDigit, num2)) {
+    if (node == NULL || !overWriteForwarding(node, beforeFirstAdded, firstAdded, firstAddedDigit, num2,
+                                             &overWrittenNumber)) {
         return false;
     }
+
+    if (overWrittenNumber != NULL) {
+        removeReverse(pf, overWrittenNumber, num1);
+    }
+    free(overWrittenNumber);
 
     DNode *beforeFirstReverseAdded = NULL;
     DNode *firstReverseAdded = NULL;
@@ -507,23 +669,13 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         deleteIterative(firstAdded);
         return false;
     }
-    return true;
-}
 
-/**
- * @brief Finds the number od children for given node.
- * Finds all children that are not NULL and returns the number of them.
- * @param [in] node the node to find the number of children for.
- * @return the number of children.
- */
-static int numberOfChildren(DNode const *node) {
-    int sum = 0;
-    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
-        if (node->next[i] != NULL) {
-            sum++;
-        }
-    }
-    return sum;
+    /*printf("Forward:\n");
+    printAll(pf->root);
+    printf("Reverse:\n");
+    printAll(pf->reverseRoot);*/
+
+    return true;
 }
 
 void phfwdRemove(PhoneForward *pf, char const *num) {
@@ -554,31 +706,6 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
         beforePointToRemove->next[pointToRemoveDigit] = NULL;
     }
     deleteIterative(lastPointToRemove);
-}
-
-/**
- * @brief Copies the number to the given buffer.
- * @param [in] num - the number to copy.
- * @param [in, out] numberPtr - the buffer to copy the number to.
- * @return Value @p true if the number was copied successfully.
- *         Value @p false if there was allocation error.
- */
-static bool copyNumber(char const *num, char **numberPtr) {
-    char *result = NULL;
-    result = malloc(sizeof(char) * (length(num) + 1));
-    if (result == NULL) {
-        return false;
-    }
-    size_t i = 0;
-
-    while (isValidDigit(num[i])) {
-        result[i] = num[i];
-        i++;
-    }
-    result[i] = '\0';
-
-    *numberPtr = result;
-    return true;
 }
 
 /**
@@ -680,7 +807,7 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
         }
     }
 
-    if (!addPhoneNumber(pn, &number)) {
+    if (!phnumAdd(pn, &number)) {
         free(number);
         phnumDelete(pn);
         return NULL;

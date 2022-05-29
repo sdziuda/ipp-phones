@@ -1,10 +1,12 @@
+/* Tests adjusted by Rentib */
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
 
-// Ten plik wÅ‚Ä…czamy jako pierwszy i dwa razy, aby sprawdziÄ‡, czy zawiera
-// wszystkie potrzebne deklaracje i definicje oraz ochronÄ™ przed wielokrotnym
-// wÅ‚Ä…czeniem.
+// Ten plik włączamy jako pierwszy i dwa razy, aby sprawdzić, czy zawiera
+// wszystkie potrzebne deklaracje i definicje oraz ochronę przed wielokrotnym
+// włączeniem.
 #include "phone_forward.h"
 #include "phone_forward.h"
 
@@ -16,21 +18,21 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-// GdzieÅ› musi byÄ‡ zdefiniowany magiczny napis sÅ‚uÅ¼Ä…cy do spawdzania, czy
-// program w caÅ‚oÅ›ci wykonaÅ‚ siÄ™ poprawnie.
+// Gdzieś musi być zdefiniowany magiczny napis służący do spawdzania, czy
+// program w całości wykonał się poprawnie.
 extern char quite_long_magic_string[];
 char quite_long_magic_string[] = "MAGIC";
 
-// MoÅ¼liwe wyniki testu
+// Możliwe wyniki testu
 #define PASS 0
 #define FAIL 1
 #define WRONG_TEST 2
 #define PASS_INSTRUMENTED 3
 
-// Liczba elementÃ³w tablicy x
+// Liczba elementów tablicy x
 #define SIZE(x) (sizeof(x) / sizeof(x)[0])
 
-// PoczÄ…tek testu
+// Początek testu
 #define INIT(p)                 \
   PhoneForward *p = phfwdNew(); \
   if (p == NULL)                \
@@ -41,7 +43,7 @@ char quite_long_magic_string[] = "MAGIC";
   phfwdDelete(p); \
   return PASS;
 
-// WypeÅ‚nienie numeru znakiem
+// Wypełnienie numeru znakiem
 #define FILL(p, from, to, c)           \
   do {                                 \
     for (int _k = from; _k < to; ++_k) \
@@ -117,15 +119,15 @@ char quite_long_magic_string[] = "MAGIC";
     phnumDelete(_p);        \
   } while (0)
 
-/** WÅAÅšCIWE TESTY **/
+/** WŁAŚCIWE TESTY **/
 
-// Tylko utworzenie i usuniÄ™cie struktury
+// Tylko utworzenie i usunięcie struktury
 static int empty_struct(void) {
     INIT(pf);
     CLEAN(pf);
 }
 
-// Brak przekierowaÅ„
+// Brak przekierowań
 static int no_forward(void) {
     char n[2];
 
@@ -140,7 +142,7 @@ static int no_forward(void) {
     CLEAN(pf);
 }
 
-// BÅ‚Ä™dne argumenty funkcji
+// Błędne argumenty funkcji
 static int wrong_arguments(void) {
     INIT(pf);
 
@@ -154,8 +156,6 @@ static int wrong_arguments(void) {
     F(phfwdAdd(pf, "123", ";"));
     F(phfwdAdd(pf, "123", ">"));
     F(phfwdAdd(pf, "123", "0?"));
-    T(phfwdAdd(pf, "123", "*"));
-    T(phfwdAdd(pf, "123", "#"));
     F(phfwdAdd(pf, "", "123"));
     F(phfwdAdd(pf, "c", "123"));
     F(phfwdAdd(pf, " ", "123"));
@@ -166,8 +166,6 @@ static int wrong_arguments(void) {
     F(phfwdAdd(pf, "1>", "123"));
     F(phfwdAdd(pf, "?", "123"));
     F(phfwdAdd(pf, "@", "123"));
-    T(phfwdAdd(pf, "*", "123"));
-    T(phfwdAdd(pf, "#", "123"));
     F(phfwdAdd(pf, "0", "0"));
 
     E(phfwdGet(pf, ""));
@@ -197,13 +195,11 @@ static int wrong_arguments(void) {
     phfwdRemove(pf, ";");
     phfwdRemove(pf, ">");
     phfwdRemove(pf, "@");
-    phfwdRemove(pf, "*");
-    phfwdRemove(pf, "#");
 
     CLEAN(pf);
 }
 
-// BÅ‚Ä™dne argumenty funkcji bez koÅ„czÄ…cego zera
+// Błędne argumenty funkcji bez kończącego zera
 static int malicious_arguments(void) {
     INIT(pf);
 
@@ -226,7 +222,7 @@ static int malicious_arguments(void) {
     CLEAN(pf);
 }
 
-// Niepsucie bazy przez bÅ‚Ä™dne wywoÅ‚ania funkcji
+// Niepsucie bazy przez błędne wywołania funkcji
 static int breaking_struct(void) {
     char a[2], b[2];
 
@@ -244,7 +240,7 @@ static int breaking_struct(void) {
     CLEAN(pf);
 }
 
-// DÅ‚ugie numery
+// Długie numery
 static int long_numbers(void) {
 #define LEN1 1000
 #define LEN2 4500
@@ -273,7 +269,7 @@ static int long_numbers(void) {
 #undef LEN4
 }
 
-// Kopiowanie wartoÅ›ci do wnÄ™trza struktury
+// Kopiowanie wartości do wnętrza struktury
 static int copy_arguments(void) {
 #define LEN5 5
 
@@ -315,7 +311,7 @@ static int two_structs(void) {
     CLEAN(pf2);
 }
 
-// Delete ze wskaÅºnikiem NULL
+// Delete ze wskaźnikiem NULL
 static int delete_null(void) {
     phnumDelete(NULL);
     CLEAN(NULL);
@@ -357,7 +353,7 @@ static int forward_overwrite(void) {
     CLEAN(pf);
 }
 
-// UsuniÄ™cie przekierowania
+// Usunięcie przekierowania
 static int remove_forward(void) {
     INIT(pf);
 
@@ -370,7 +366,7 @@ static int remove_forward(void) {
     CLEAN(pf);
 }
 
-// RÃ³Å¼ne operacje na strukturze
+// Różne operacje na strukturze
 static int various_ops(void) {
     INIT(pf);
 
@@ -399,7 +395,7 @@ static int various_ops(void) {
     CLEAN(pf);
 }
 
-// DuÅ¼o operacji na strukturze
+// Dużo operacji na strukturze
 static int many_ops() {
 #define xfrom   00000
 #define xto     99999
@@ -457,7 +453,7 @@ static int many_ops() {
 #undef format3
 }
 
-// Bardzo dÅ‚ugie numery
+// Bardzo długie numery
 static int very_long(void) {
 #define LONG_LEN 250000
 
@@ -491,7 +487,7 @@ static int very_long(void) {
 #undef LONG_LEN
 }
 
-// DuÅ¼a liczba przekierowaÅ„
+// Duża liczba przekierowań
 static int many_remove(void) {
 #define BIG_COUNT 10000
 
@@ -515,7 +511,7 @@ static int many_remove(void) {
 #undef BIG_COUNT
 }
 
-// Intensywne dodawanie i usuwanie przekierowaÅ„
+// Intensywne dodawanie i usuwanie przekierowań
 static int add_remove(void) {
 #define yfrom   0000
 #define yto     9999
@@ -553,13 +549,13 @@ static int add_remove(void) {
 #undef REPEAT_COUNT
 }
 
-/** TESTY ALOKACJI PAMIÄ˜CI
-    Te testy muszÄ… byÄ‡ linkowane z opcjami
+/** TESTY ALOKACJI PAMIĘCI
+    Te testy muszą być linkowane z opcjami
     -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc
     -Wl,--wrap=reallocarray -Wl,--wrap=free -Wl,--wrap=strdup -Wl,--wrap=strndup
 **/
 
-// Przechwytujemy funkcje alokujÄ…ce i zwalniajÄ…ce pamiÄ™Ä‡.
+// Przechwytujemy funkcje alokujące i zwalniające pamięć.
 void *__real_malloc(size_t size) __attribute__((weak));
 void *__real_calloc(size_t nmemb, size_t size)__attribute__((weak));
 void *__real_realloc(void *ptr, size_t size)__attribute__((weak));
@@ -568,21 +564,21 @@ char *__real_strdup(const char *s)__attribute__((weak));
 char *__real_strndup(const char *s, size_t size)__attribute__((weak));
 void __real_free(void *ptr)__attribute__((weak));
 
-// Trzymamy globalnie informacje o alokacjach i zwolnieniach pamiÄ™ci i nie
-// pozwalamy ich optymalizowaÄ‡.
-static volatile unsigned call_counter = 0;  // licznik wywoÅ‚aÅ„ alokacji
-static volatile unsigned fail_counter = 0;  // numer bÅ‚Ä™dnej alokacji
+// Trzymamy globalnie informacje o alokacjach i zwolnieniach pamięci i nie
+// pozwalamy ich optymalizować.
+static volatile unsigned call_counter = 0;  // licznik wywołań alokacji
+static volatile unsigned fail_counter = 0;  // numer błędnej alokacji
 static volatile unsigned alloc_counter = 0; // liczba wykonanych alokacji
-static volatile unsigned free_counter = 0;  // liczba wykonanych zwolnieÅ„
+static volatile unsigned free_counter = 0;  // liczba wykonanych zwolnień
 static volatile char *function_name = NULL; // nazwa nieudanej funkcji
-static volatile bool wrap_flag = false;     // przechwytujÄ…ce funkcje byÅ‚y woÅ‚ane
+static volatile bool wrap_flag = false;     // przechwytujące funkcje były wołane
 
-// W zadanym momencie alokacja pamiÄ™ci zawodzi.
+// W zadanym momencie alokacja pamięci zawodzi.
 static bool should_fail(void) {
     return ++call_counter == fail_counter;
 }
 
-// Realokacja musi siÄ™ udaÄ‡, jeÅ›li nie zwiÄ™kszamy rozmiaru alokowanej pamiÄ™ci.
+// Realokacja musi się udać, jeśli nie zwiększamy rozmiaru alokowanej pamięci.
 static bool can_fail(void const *old_ptr, size_t new_size) {
     if (old_ptr == NULL)
         return true;
@@ -590,12 +586,12 @@ static bool can_fail(void const *old_ptr, size_t new_size) {
         return new_size > malloc_usable_size((void *)old_ptr);
 }
 
-// Symulujemy brak pamiÄ™ci.
+// Symulujemy brak pamięci.
 #define UNRELIABLE_ALLOC(ptr, size, fun, name) \
   do { \
     wrap_flag = true; \
     if (ptr != NULL && size == 0) { \
-      /* Takie wywoÅ‚anie realloc jest rÃ³wnowaÅ¼ne wywoÅ‚aniu free(ptr). */ \
+      /* Takie wywołanie realloc jest równoważne wywołaniu free(ptr). */ \
       ++free_counter; \
       return fun; \
     } \
@@ -634,14 +630,14 @@ char *__wrap_strndup(const char *s, size_t size) {
     UNRELIABLE_ALLOC(NULL, 0, __real_strndup(s, size), "strndup");
 }
 
-// Zwalnianie pamiÄ™ci zawsze siÄ™ udaje. Odnotowujemy jedynie fakt zwolnienia.
+// Zwalnianie pamięci zawsze się udaje. Odnotowujemy jedynie fakt zwolnienia.
 void __wrap_free(void *ptr) {
     __real_free(ptr);
     if (ptr)
         ++free_counter;
 }
 
-// Test reakcji implementacji na niepowodzenie alokacji pamiÄ™ci
+// Test reakcji implementacji na niepowodzenie alokacji pamięci
 static unsigned alloc_fail_test(void) {
     unsigned visited = 0;
     PhoneForward *pf = NULL;
@@ -683,11 +679,25 @@ static unsigned alloc_fail_test(void) {
     }
 
     phnumDelete(pn);
+
+    if ((pn = phfwdReverse(pf, "4")) != NULL) {
+        visited |= 01000;
+    }
+    else if ((pn = phfwdReverse(pf, "4")) != NULL) {
+        visited |= 02000;
+    }
+    else {
+        visited |= 04000;
+        phfwdDelete(pf);
+        return visited;
+    }
+
+    phnumDelete(pn);
     phfwdDelete(pf);
     return visited;
 }
 
-// Sprawdzenie reakcji implementacji na niepowodzenie alokacji pamiÄ™ci
+// Sprawdzenie reakcji implementacji na niepowodzenie alokacji pamięci
 static int alloc_fail(void) {
     unsigned fail, pass;
     for (fail = 0, pass = 0, fail_counter = 1; fail < 3 && pass < 3; ++fail_counter) {
@@ -718,7 +728,7 @@ static int alloc_fail(void) {
         return FAIL;
 }
 
-/** URUCHAMIANIE TESTÃ“W **/
+/** URUCHAMIANIE TESTÓW **/
 
 typedef struct {
     char const *name;
@@ -760,6 +770,6 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], test_list[i].name) == 0)
         return do_test(test_list[i].function);
 
-    fprintf(stderr, "UÅ¼ycie:\n%s nazwa_testu\n", argv[0]);
+    fprintf(stderr, "Użycie:\n%s nazwa_testu\n", argv[0]);
     return WRONG_TEST;
 }

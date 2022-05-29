@@ -41,7 +41,7 @@ bool phnumAdd(PhoneNumbers *pNumbers, char **number) {
         pNumbers->capacity *= 2;
         pNumbers->array = realloc(pNumbers->array, pNumbers->capacity * sizeof(PNumber));
         if (pNumbers->array == NULL) {
-            pNumbers->size--;
+            pNumbers->size = 0;
             return false;
         }
     }

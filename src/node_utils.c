@@ -300,7 +300,7 @@ void removeReverseWithPrefix(DNode *start, char const *num, char const *prefix) 
 
     phnumRemoveWithPrefix(&node->numbers, prefix);
 
-    if (node->numbers == NULL) {
+    if (node->numbers == NULL && numberOfChildren(node) == 0) {
         if (beforePointToRemove != NULL) {
             beforePointToRemove->next[pointToRemoveDigit] = NULL;
         }

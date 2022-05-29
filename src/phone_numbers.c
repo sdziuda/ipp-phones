@@ -39,11 +39,13 @@ bool phnumAdd(PhoneNumbers *pNumbers, char **number) {
 
     if (pNumbers->size == pNumbers->capacity) {
         pNumbers->capacity *= 2;
-        pNumbers->array = realloc(pNumbers->array, pNumbers->capacity * sizeof(PNumber));
-        if (pNumbers->array == NULL) {
-            pNumbers->size = 0;
+        //These lines were kind of problematic.
+        PNumber *tmp = realloc(pNumbers->array, pNumbers->capacity * sizeof(PNumber));
+        if (tmp == NULL) {
+            pNumbers->size--;
             return false;
         }
+        pNumbers->array = tmp;
     }
 
     pNumbers->array[pNumbers->size - 1].number = *number;
@@ -66,11 +68,16 @@ bool phnumAddAllCopiedParts(PhoneNumbers *from, PhoneNumbers *to, char const *or
 
 void phnumRemove(PhoneNumbers **pNumbersPtr, char const *num) {
     PhoneNumbers *pNumbers = *pNumbersPtr;
+    if (pNumbers == NULL) {
+        return;
+    }
+
     size_t i;
     for (i = 0; i < pNumbers->size; i++) {
         if (areEqual(pNumbers->array[i].number, num)) {
             free(pNumbers->array[i].number);
             pNumbers->size--;
+            break;
         }
     }
 
@@ -89,6 +96,10 @@ void phnumRemove(PhoneNumbers **pNumbersPtr, char const *num) {
 
 void phnumRemoveWithPrefix(PhoneNumbers **pNumbersPtr, char const *prefix) {
     PhoneNumbers *pNumbers = *pNumbersPtr;
+    if (pNumbers == NULL) {
+        return;
+    }
+
     size_t i = 0;
     while (i < pNumbers->size) {
         if (isPrefix(pNumbers->array[i].number, prefix)) {
@@ -139,9 +150,9 @@ static int comparePhoneNumbers(void const *a, void const *b) {
 
     size_t i = 0;
     while (isValidDigit(p1->number[i]) && isValidDigit(p2->number[i])) {
-        if (p1->number[i] > p2->number[i]) {
+        if (toDecimalRepresentation(p1->number[i]) > toDecimalRepresentation(p2->number[i])) {
             return 1;
-        } else if (p1->number[i] < p2->number[i]) {
+        } else if (toDecimalRepresentation(p1->number[i]) < toDecimalRepresentation(p2->number[i])) {
             return -1;
         }
         i++;

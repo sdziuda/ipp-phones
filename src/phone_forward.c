@@ -10,7 +10,6 @@
 #include <ctype.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdio.h>
 #include "phone_forward.h"
 #include "string_utils.h"
 #include "phone_numbers.h"
@@ -62,26 +61,6 @@ void phfwdDelete(PhoneForward *pf) {
     free(pf);
 }
 
-/*static void printPhnum(PhoneNumbers const *pNumbers) {
-    for (size_t i = 0; i < pNumbers->size; i++) {
-        printf("%s ", pNumbers->array[i].number);
-    }
-    printf("\n");
-}
-
-static void printAll(DNode *node) {
-    if (node == NULL) {
-        return;
-    }
-    if (node->numbers != NULL) {
-        printPhnum(node->numbers);
-    }
-    for (int i = 0; i < NUMBER_OF_DIGITS; i++) {
-        if (node->next[i] != NULL) printf("\t%d: ", i);
-        printAll(node->next[i]);
-    }
-}*/
-
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     if (pf == NULL || !checkNumbers(num1, num2)) {
         return false;
@@ -117,11 +96,6 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
         return false;
     }
 
-    /*printf("Forward:\n");
-    printAll(pf->root);
-    printf("Reverse:\n");
-    printAll(pf->reverseRoot);*/
-
     return true;
 }
 
@@ -153,11 +127,6 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
         beforePointToRemove->next[pointToRemoveDigit] = NULL;
     }
     deleteIterativeWithReverse(pf->reverseRoot, lastPointToRemove, num);
-
-    /*printf("Forward:\n");
-    printAll(pf->root);
-    printf("Reverse:\n");
-    printAll(pf->reverseRoot);*/
 }
 
 PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
@@ -199,16 +168,27 @@ PhoneNumbers *phfwdGet(PhoneForward const *pf, char const *num) {
     return pn;
 }
 
-/** @brief Dummy function.
- * For now this function doesn't do anything. It is here only to avoid potential
- * warnings from the compiler. This function will be implemented in the next
- * part of the task and this comment will be removed.
- * @param [in] pf - unused pointer to the PhoneForward tree.
- * @param [in] num - unused pointer to the number.
- * @return NULL in every case.
- */
-PhoneNumbers *phfwdReverse(
-        __attribute__((unused)) PhoneForward const *pf,
-        __attribute__((unused)) char const *num) {
-    return NULL;
+PhoneNumbers *phfwdReverse(PhoneForward const *pf, char const *num) {
+    if (pf == NULL) {
+        return NULL;
+    }
+
+    PhoneNumbers *pn = phnumNew();
+    if (pn == NULL) {
+        return NULL;
+    }
+
+    if (!isNumber(num)) {
+        return pn;
+    }
+
+    if (!addAllFromReverseTree(pf->reverseRoot, num, pn)) {
+        phnumDelete(pn);
+        return NULL;
+    }
+
+    sortPhoneNumbers(pn);
+    removeDuplicates(pn);
+
+    return pn;
 }

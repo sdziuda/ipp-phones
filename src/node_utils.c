@@ -328,3 +328,34 @@ void findPrefix(DNode *start, char const *num, char const **maxForwardedPrefix, 
         }
     }
 }
+
+bool addAllFromReverseTree(DNode *start, char const *num, PhoneNumbers *pnum) {
+    DNode *node = start;
+    size_t i = 0;
+
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
+
+        if (node->next[digit] == NULL) {
+            break;
+        } else if (node->next[digit]->numbers != NULL) {
+            if (!phnumAddAllCopiedParts(node->next[digit]->numbers, pnum, num, i + 1)) {
+                return false;
+            }
+        }
+
+        node = node->next[digit];
+        i++;
+    }
+
+    char *numCopy = NULL;
+    if (!copyNumber(num, &numCopy)) {
+        return false;
+    }
+    if (!phnumAdd(pnum, &numCopy)) {
+        free(numCopy);
+        return false;
+    }
+
+    return true;
+}

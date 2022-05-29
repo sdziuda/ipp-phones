@@ -72,8 +72,8 @@ void deleteIterativeWithReverse(DNode *deleteReverseStart, DNode *deleteForwardS
  * @param [in] num - number to get the last digit of.
  * @return pointer to the node at the end of the route or NULL if there was an allocation error.
  */
- DNode *getEndNode(DNode *start, DNode **beforeFirstAddedPtr, DNode **firstAddedPtr, int *firstAddedDigit,
-                   char const *num);
+DNode *getEndNode(DNode *start, DNode **beforeFirstAddedPtr, DNode **firstAddedPtr, int *firstAddedDigit,
+                  char const *num);
 
 /**
 * @brief Finds the number od children for given node.
@@ -148,5 +148,17 @@ void removeReverseWithPrefix(DNode *start, char const *num, char const *prefix);
  * @param [in, out] lenOfMaxOriginalPrefix - length of the longest prefix.
  */
 void findPrefix(DNode *start, char const *num, char const **maxForwardedPrefix, size_t *lenOfMaxOriginalPrefix);
+
+/**
+ * @brief Adds all numbers after the operation of reversing.
+ * This function will function will go down the reverse tree and add all the numbers on its way, changing the prefix
+ * and adding the new number to the given vector.
+ * @param [in] start - pointer to the node that we want to start searching from.
+ * @param [in] num - the number we are finding reverse forwards of.
+ * @param [in, out] pnum - the vector to add the numbers to.
+ * @return Value @p true if the numbers were added successfully.
+ *         Value @p false if there was an allocation error.
+ */
+bool addAllFromReverseTree(DNode *start, char const *num, PhoneNumbers *pnum);
 
 #endif /* __NODE_UTILS_H__ */

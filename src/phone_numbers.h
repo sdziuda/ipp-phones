@@ -69,4 +69,29 @@ void phnumRemove(PhoneNumbers **pNumbersPtr, char const *num);
  */
 void phnumRemoveWithPrefix(PhoneNumbers **pNumbersPtr, char const *prefix);
 
+/**
+ * @brief Adds all numbers with changed prefix to the vector.
+ * This function will create a copy of the original number, with a changed prefix, stored in one vector (using
+ * @ref copyParts), and add these new numbers to the other vector.
+ * @param [in] from - vector containing the prefixes.
+ * @param [in, out] to - vector to add the new numbers to.
+ * @param [in] originalNumber - the original number we want to change prefixes in.
+ * @param [in] prefixLength - the length of the prefix we want to change in the original number.
+ * @return Value @p true if the numbers were added successfully.
+ *         Value @p false if there was an allocation error.
+ */
+bool phnumAddAllCopiedParts(PhoneNumbers *from, PhoneNumbers *to, char const *originalNumber, size_t prefixLength);
+
+/**
+ * @brief Sorts the vector of phone numbers.
+ * @param [in] pNumbers - pointer to the vector to sort.
+ */
+void sortPhoneNumbers(PhoneNumbers *pNumbers);
+
+/**
+ * @brief Removes duplicates from the vector.
+ * @param [in, out] pNumbers - pointer to the vector to remove duplicates from.
+ */
+void removeDuplicates(PhoneNumbers *pNumbers);
+
 #endif /* __PHONE_NUMBERS_H__ */

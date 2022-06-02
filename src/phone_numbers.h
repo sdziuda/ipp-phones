@@ -1,5 +1,5 @@
 /** @file
- * Interface of the class containing phone numbers.
+ * Interface of the class storing phone numbers.
  *
  * @author Szymon Dziuda <sd438422@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
@@ -12,27 +12,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-/**
- * This is a structure containing a single phone number.
- */
-struct PhoneNumber;
-typedef struct PhoneNumber PNumber; /**< A single phone number. */
-
-/**
- * @struct PhoneNumbers phone_forward.h
- * @brief Vector containing an array of phone numbers.
- * @var PhoneNumbers::array
- *      Array of phone numbers.
- * @var PhoneNumbers::size
- *      Number of elements in the array.
- * @var PhoneNumbers::capacity
- *      Maximum number of elements in the array.
- */
-struct PhoneNumbers {
-    PNumber *array;
-    size_t size;
-    size_t capacity;
-};
+struct PhoneNumbers;
 typedef struct PhoneNumbers PhoneNumbers; /**< Vector containing an array of phone numbers. */
 
 /**
@@ -41,6 +21,14 @@ typedef struct PhoneNumbers PhoneNumbers; /**< Vector containing an array of pho
  * @return Pointer to the new structure or NULL if there was an allocation error.
  */
 PhoneNumbers *phnumNew(void);
+
+/**
+ * @brief Obtains size of the phone numbers vector.
+ * Obtains the size of the phone numbers vector stored by its structure.
+ * @param [in] pNumbers - vector of phone numbers.
+ * @return Value of the size of the vector.
+ */
+size_t phnumGetSize(PhoneNumbers const *pNumbers);
 
 /** @brief Adds phone number to the vector.
  * Allocates memory (if needed) for the new number and adds it to the array.

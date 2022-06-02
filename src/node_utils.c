@@ -14,6 +14,26 @@
 #include "string_utils.h"
 #include "node_utils.h"
 
+#define NUMBER_OF_DIGITS 12 /**< Number of different digits. */
+
+/**
+ * @struct Node
+ * @brief Node of the tree of phone forwarding.
+ * @var Node::numbers
+ *      Vector of numbers, for the forwarding tree it will hold only one number (the one to which the route from
+ *      root to the current node is forwarded), for the reverse tree it will hold all numbers which are
+ *      forwarded to that number.
+ * @var Node::parent
+ *      Pointer to the parent node.
+ * @var Node::next
+ *      Array of pointers to the 12 children nodes in the tree.
+ */
+struct Node {
+    PhoneNumbers *numbers;
+    DNode *parent;
+    DNode *next[NUMBER_OF_DIGITS];
+};
+
 DNode *nodeNew(void) {
     DNode *node = malloc(sizeof(DNode));
     if (node == NULL) {
@@ -27,6 +47,18 @@ DNode *nodeNew(void) {
     }
 
     return node;
+}
+
+PhoneNumbers *nodeGetNumbers(DNode *node) {
+    return node->numbers;
+}
+
+DNode *nodeGetNext(DNode *node, int digit) {
+    return node->next[digit];
+}
+
+void nodeSetNext(DNode *node, int digit, DNode *next) {
+    node->next[digit] = next;
 }
 
 void deleteIterative(DNode *node) {
@@ -131,7 +163,7 @@ void deleteIterativeWithReverse(DNode *deleteReverseStart, DNode *deleteForwardS
         if (!hasChild) {
             DNode *parent = current->parent;
             if (parent == NULL) {
-                if (current->numbers != NULL && current->numbers->size > 0) {
+                if (current->numbers != NULL && phnumGetSize(current->numbers) > 0) {
                     removeReverseWithPrefix(deleteReverseStart, phnumGet(current->numbers, 0), prefix);
                 }
                 phnumDelete(current->numbers);
@@ -146,7 +178,7 @@ void deleteIterativeWithReverse(DNode *deleteReverseStart, DNode *deleteForwardS
                 }
             }
 
-            if (current->numbers != NULL && current->numbers->size > 0) {
+            if (current->numbers != NULL && phnumGetSize(current->numbers) > 0) {
                 removeReverseWithPrefix(deleteReverseStart, phnumGet(current->numbers, 0), prefix);
             }
             phnumDelete(current->numbers);
@@ -220,7 +252,7 @@ bool overWriteForwarding(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded
     }
     result[i] = '\0';
 
-    if (node->numbers != NULL && node->numbers->size > 0 &&
+    if (node->numbers != NULL && phnumGetSize(node->numbers) > 0 &&
         !copyNumber(phnumGet(node->numbers, 0), overWritten)) {
         if (beforeFirstAdded != NULL) {
             beforeFirstAdded->next[firstAddedDigit] = NULL;
@@ -332,7 +364,7 @@ void findPrefix(DNode *start, char const *num, char const **maxForwardedPrefix, 
         node = node->next[digit];
         i++;
 
-        if (node->numbers != NULL && node->numbers->size > 0) {
+        if (node->numbers != NULL && phnumGetSize(node->numbers) > 0) {
             (*maxForwardedPrefix) = phnumGet(node->numbers, 0);
             (*lenOfMaxOriginalPrefix) = i;
         }

@@ -89,7 +89,7 @@ bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2) {
     if (nodeReverse == NULL || !addReverse(nodeReverse, beforeFirstReverseAdded, firstReverseAdded,
                                            firstReverseAddedDigit, num1)) {
         if (beforeFirstAdded != NULL) {
-            beforeFirstAdded->next[firstAddedDigit] = NULL;
+            nodeSetNext(beforeFirstAdded, firstAddedDigit, NULL);
         }
         deleteIterative(firstAdded);
         return false;
@@ -110,20 +110,20 @@ void phfwdRemove(PhoneForward *pf, char const *num) {
     size_t i = 0;
     while (isValidDigit(num[i])) {
         int digit = toDecimalRepresentation(num[i]);
-        if (node->next[digit] == NULL) {
+        if (nodeGetNext(node, digit) == NULL) {
             return;
         }
-        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+        if (nodeGetNumbers(node) != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
             beforePointToRemove = node;
             pointToRemoveDigit = digit;
-            lastPointToRemove = node->next[digit];
+            lastPointToRemove = nodeGetNext(node, digit);
         }
-        node = node->next[digit];
+        node = nodeGetNext(node, digit);
         i++;
     }
 
     if (beforePointToRemove != NULL) {
-        beforePointToRemove->next[pointToRemoveDigit] = NULL;
+        nodeSetNext(beforePointToRemove, pointToRemoveDigit, NULL);
     }
     deleteIterativeWithReverse(pf->reverseRoot, lastPointToRemove, num);
 }

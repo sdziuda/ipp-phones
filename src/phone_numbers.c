@@ -21,6 +21,23 @@
 struct PhoneNumber {
     char *number;
 };
+typedef struct PhoneNumber PNumber; /**< A single phone number. */
+
+/**
+ * @struct PhoneNumbers phone_forward.h
+ * @brief Vector containing an array of phone numbers.
+ * @var PhoneNumbers::array
+ *      Array of phone numbers.
+ * @var PhoneNumbers::size
+ *      Number of elements in the array.
+ * @var PhoneNumbers::capacity
+ *      Maximum number of elements in the array.
+ */
+struct PhoneNumbers {
+    PNumber *array;
+    size_t size;
+    size_t capacity;
+};
 
 PhoneNumbers *phnumNew(void) {
     PhoneNumbers *numbers = malloc(sizeof(PhoneNumbers));
@@ -32,6 +49,10 @@ PhoneNumbers *phnumNew(void) {
     numbers->size = 0;
     numbers->capacity = 1;
     return numbers;
+}
+
+size_t phnumGetSize(PhoneNumbers const *pNumbers) {
+    return pNumbers->size;
 }
 
 bool phnumAdd(PhoneNumbers *pNumbers, char **number) {

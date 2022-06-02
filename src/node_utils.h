@@ -1,5 +1,5 @@
 /** @file
- * Interface of the class holding the node utilities.
+ * Interface of the class storing the node.
  *
  * @author Szymon Dziuda <sd438422@students.mimuw.edu.pl>
  * @copyright Uniwersytet Warszawski
@@ -13,25 +13,10 @@
 #include <stddef.h>
 #include "phone_numbers.h"
 
-#define NUMBER_OF_DIGITS 12 /**< Number of different digits. */
-
 /**
- * @struct Node
- * @brief Node of the tree of phone forwarding.
- * @var Node::numbers
- *      Vector of numbers, for the forwarding tree it will hold only one number (the one to which the route from
- *      root to the current node is forwarded), for the reverse tree it will hold all numbers which are
- *      forwarded to that number.
- * @var Node::parent
- *      Pointer to the parent node.
- * @var Node::next
- *      Array of pointers to the 12 children nodes in the tree.
+ * This is a structure storing a node in the tree of phone numbers.
  */
-struct Node {
-    PhoneNumbers *numbers;
-    struct Node *parent;
-    struct Node *next[NUMBER_OF_DIGITS];
-};
+struct Node;
 typedef struct Node DNode; /**< Node of the forwarding tree. */
 
 /**
@@ -40,6 +25,31 @@ typedef struct Node DNode; /**< Node of the forwarding tree. */
  * @return Pointer to the new node or NULL if there was an allocation error.
  */
 DNode *nodeNew(void);
+
+/**
+ * @brief Obtains the vector of phone numbers from the node.
+ * @param [in] node - pointer to the node.
+ * @return The vector of phone numbers stored in the node.
+ */
+PhoneNumbers *nodeGetNumbers(DNode *node);
+
+/**
+ * @brief Obtains the next node in the tree.
+ * Obtains the pointer to the next node at the given index.
+ * @param [in] node - pointer to the node we want to obtain the next node from.
+ * @param [in] digit - the index of the next node.
+ * @return The pointer to the next node at the given index.
+ */
+DNode *nodeGetNext(DNode *node, int digit);
+
+/**
+ * @brief Sets the next node in the tree.
+ * Sets the pointer to the next node at the given index.
+ * @param [in] node - pointer to the node we want to set the next node for.
+ * @param [in] digit - the index of the next node.
+ * @param [in] next - pointer to node we want to set as the next node.
+ */
+void nodeSetNext(DNode *node, int digit, DNode *next);
 
 /**
  * @brief Deletes the nodes in phone forwarding tree.

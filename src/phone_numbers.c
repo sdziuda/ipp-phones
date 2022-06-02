@@ -39,7 +39,6 @@ bool phnumAdd(PhoneNumbers *pNumbers, char **number) {
 
     if (pNumbers->size == pNumbers->capacity) {
         pNumbers->capacity *= 2;
-        //These lines were kind of problematic.
         PNumber *tmp = realloc(pNumbers->array, pNumbers->capacity * sizeof(PNumber));
         if (tmp == NULL) {
             pNumbers->size--;
@@ -63,6 +62,7 @@ bool phnumAddAllCopiedParts(PhoneNumbers *from, PhoneNumbers *to, char const *or
             return false;
         }
     }
+
     return true;
 }
 
@@ -150,9 +150,12 @@ static int comparePhoneNumbers(void const *a, void const *b) {
 
     size_t i = 0;
     while (isValidDigit(p1->number[i]) && isValidDigit(p2->number[i])) {
-        if (toDecimalRepresentation(p1->number[i]) > toDecimalRepresentation(p2->number[i])) {
+        int const n1 = toDecimalRepresentation(p1->number[i]);
+        int const n2 = toDecimalRepresentation(p2->number[i]);
+
+        if (n1 > n2) {
             return 1;
-        } else if (toDecimalRepresentation(p1->number[i]) < toDecimalRepresentation(p2->number[i])) {
+        } else if (n1 < n2) {
             return -1;
         }
         i++;
@@ -174,6 +177,7 @@ void sortPhoneNumbers(PhoneNumbers *pNumbers) {
 
 void removeDuplicates(PhoneNumbers *pNumbers) {
     size_t i = 0;
+
     while (i < pNumbers->size - 1) {
         if (areEqual(pNumbers->array[i].number, pNumbers->array[i + 1].number)) {
             phnumRemoveAtIndex(pNumbers, i + 1);

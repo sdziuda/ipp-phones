@@ -82,16 +82,16 @@ int toDecimalRepresentation(char c);
 bool copyNumber(char const *num, char **numberPtr);
 
 /**
- * @brief Creates a number after forwarding the given number.
- * This function first copies the given prefix @p forwardedPrefix and then appends the rest of the given number @p num
- * without the original prefix that was forwarded.
+ * @brief Copies two parts of the number to the given buffer.
+ * This function first copies the given prefix @p newPrefix and then appends the rest of the given number @p num
+ * without the first @p lenOfOriginalPrefix digits.
  * @param [in] num - number to be forwarded.
- * @param [in] forwardedPrefix - the prefix which the longest original prefix is forwarded to.
+ * @param [in] newPrefix - the new prefix of the number.
  * @param [in] lenOfOriginalPrefix - length of the original prefix.
  * @param [in, out] numberPtr - pointer to the created number.
  * @return Value @p true if the number was created successfully.
  *         Value @p false if there was allocation error.
  */
-bool copyParts(char const *num, char const *forwardedPrefix, size_t lenOfOriginalPrefix, char **numberPtr);
+bool copyParts(char const *num, char const *newPrefix, size_t lenOfOriginalPrefix, char **numberPtr);
 
 #endif /* __STRING_UTILS_H__ */

@@ -69,6 +69,47 @@ void deleteIterative(DNode *node) {
     }
 }
 
+/**
+ * @brief Removes numbers with certain prefix from the reverse trees.
+ * This function will find the end of the route in the reverse tree, represented by the given number. Then it will
+ * remove all the numbers that contain the given prefix from the vector. If there are no numbers left in the vector,
+ * this function will delete all nodes down to the end of the route (starting from the point that can be safely
+ * deleted).
+ * @param [in] start - pointer to the start of the route.
+ * @param [in] num - the number that represents the route.
+ * @param [in] prefix - the prefix of numbers we want to remove.
+ */
+static void removeReverseWithPrefix(DNode *start, char const *num, char const *prefix) {
+    DNode *node = start;
+    DNode *beforePointToRemove = start;
+    DNode *lastPointToRemove = NULL;
+    int pointToRemoveDigit = 0;
+    size_t i = 0;
+
+    while (isValidDigit(num[i])) {
+        int digit = toDecimalRepresentation(num[i]);
+        if (node->next[digit] == NULL) {
+            return;
+        }
+        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
+            beforePointToRemove = node;
+            pointToRemoveDigit = digit;
+            lastPointToRemove = node->next[digit];
+        }
+        node = node->next[digit];
+        i++;
+    }
+
+    phnumRemoveWithPrefix(&node->numbers, prefix);
+
+    if (node->numbers == NULL && numberOfChildren(node) == 0) {
+        if (beforePointToRemove != NULL) {
+            beforePointToRemove->next[pointToRemoveDigit] = NULL;
+        }
+        deleteIterative(lastPointToRemove);
+    }
+}
+
 void deleteIterativeWithReverse(DNode *deleteReverseStart, DNode *deleteForwardStart, char const *prefix) {
     DNode *current = deleteForwardStart;
     if (current == NULL) {
@@ -270,37 +311,6 @@ void removeReverse(DNode *start, char const *num1, char const *num2) {
     phnumRemove(&node->numbers, num2);
 
     if (node->numbers == NULL) {
-        if (beforePointToRemove != NULL) {
-            beforePointToRemove->next[pointToRemoveDigit] = NULL;
-        }
-        deleteIterative(lastPointToRemove);
-    }
-}
-
-void removeReverseWithPrefix(DNode *start, char const *num, char const *prefix) {
-    DNode *node = start;
-    DNode *beforePointToRemove = start;
-    DNode *lastPointToRemove = NULL;
-    int pointToRemoveDigit = 0;
-    size_t i = 0;
-
-    while (isValidDigit(num[i])) {
-        int digit = toDecimalRepresentation(num[i]);
-        if (node->next[digit] == NULL) {
-            return;
-        }
-        if (node->numbers != NULL || numberOfChildren(node) > 1 || lastPointToRemove == NULL) {
-            beforePointToRemove = node;
-            pointToRemoveDigit = digit;
-            lastPointToRemove = node->next[digit];
-        }
-        node = node->next[digit];
-        i++;
-    }
-
-    phnumRemoveWithPrefix(&node->numbers, prefix);
-
-    if (node->numbers == NULL && numberOfChildren(node) == 0) {
         if (beforePointToRemove != NULL) {
             beforePointToRemove->next[pointToRemoveDigit] = NULL;
         }

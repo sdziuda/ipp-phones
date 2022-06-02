@@ -138,16 +138,16 @@ bool copyNumber(char const *num, char **numberPtr) {
     return true;
 }
 
-bool copyParts(char const *num, char const *forwardedPrefix, size_t lenOfOriginalPrefix, char **numberPtr) {
+bool copyParts(char const *num, char const *newPrefix, size_t lenOfOriginalPrefix, char **numberPtr) {
     char *result = NULL;
-    result = malloc(sizeof(char) * (length(forwardedPrefix) - lenOfOriginalPrefix + length(num) + 1));
+    result = malloc(sizeof(char) * (length(newPrefix) - lenOfOriginalPrefix + length(num) + 1));
     if (result == NULL) {
         return false;
     }
     size_t i = 0;
 
-    while (isValidDigit(forwardedPrefix[i])) {
-        result[i] = forwardedPrefix[i];
+    while (isValidDigit(newPrefix[i])) {
+        result[i] = newPrefix[i];
         i++;
     }
 

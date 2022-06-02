@@ -126,18 +126,6 @@ bool addReverse(DNode *node, DNode *beforeFirstAdded, DNode *firstAdded, int fir
 void removeReverse(DNode *start, char const *num1, char const *num2);
 
 /**
- * @brief Removes numbers with certain prefix from the reverse trees.
- * This function will find the end of the route in the reverse tree, represented by the given number. Then it will
- * remove all the numbers that contain the given prefix from the vector. If there are no numbers left in the vector,
- * this function will delete all nodes down to the end of the route (starting from the point that can be safely
- * deleted).
- * @param [in] start - pointer to the start of the route.
- * @param [in] num - the number that represents the route.
- * @param [in] prefix - the prefix of numbers we want to remove.
- */
-void removeReverseWithPrefix(DNode *start, char const *num, char const *prefix);
-
-/**
  * @brief Finds the longest prefix of the number that is forwarded to another number.
  * This function is used to find the longest prefix of the number @p num that still has a number in the phone forward
  * tree starting from the node @p start. This prefix will be then used to change the number to the forwarded number

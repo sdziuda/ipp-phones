@@ -3,3 +3,4 @@
 /debug/
 /release/
 /cmake-build-debug-remote/
+/cmake-build-debug-remote-coverage/

@@ -191,3 +191,45 @@ PhoneNumbers *phfwdReverse(PhoneForward const *pf, char const *num) {
 
     return pn;
 }
+
+PhoneNumbers *phfwdGetReverse(PhoneForward const *pf, char const *num) {
+    if (pf == NULL) {
+        return NULL;
+    }
+
+    if (!isNumber(num)) {
+        PhoneNumbers *empty = phnumNew();
+        if (empty == NULL) {
+            return NULL;
+        }
+
+        return empty;
+    }
+
+    PhoneNumbers *pn = phfwdReverse(pf, num);
+    if (pn == NULL) {
+        return NULL;
+    }
+
+    size_t i = 0;
+    while (i < phnumGetSize(pn)) {
+        char const *currentNumber = phnumGet(pn, i);
+        PhoneNumbers *inverse = phfwdGet(pf, currentNumber);
+        if (inverse == NULL) {
+            phnumDelete(pn);
+            return NULL;
+        }
+
+        char const *inverseNumber = phnumGet(inverse, 0);
+
+        if (areEqual(inverseNumber, num)) {
+            i++;
+        } else {
+            phnumRemoveAtIndex(pn, i);
+        }
+
+        phnumDelete(inverse);
+    }
+
+    return pn;
+}

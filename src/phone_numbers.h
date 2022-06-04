@@ -58,6 +58,15 @@ void phnumRemove(PhoneNumbers **pNumbersPtr, char const *num);
 void phnumRemoveWithPrefix(PhoneNumbers **pNumbersPtr, char const *prefix);
 
 /**
+ * @brief Removes phone number at the given index.
+ * This function will free the memory allocated for the phone number at the given index and then shift all other
+ * phone numbers in the array to the left.
+ * @param [in ,out] pNumbers - pointer to the phone numbers structure.
+ * @param [in] index - index of the phone number to be removed.
+ */
+void phnumRemoveAtIndex(PhoneNumbers *pNumbers, size_t index);
+
+/**
  * @brief Adds all numbers with changed prefix to the vector.
  * This function will create a copy of the original number, with a changed prefix, stored in one vector (using
  * @ref copyParts), and add these new numbers to the other vector.

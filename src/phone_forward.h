@@ -46,14 +46,14 @@ void phfwdDelete(PhoneForward *pf);
  * @param[in] num2   – pointer to the prefix of the phone numbers to be forwarded to.
  * @return Value @p true, if the phone forwarding was added.
  *         Value @p false, if an error occurred, for example the given string doesn't represent a number,
- *         both numbers are identical or there was an allocation error.
+ *         both numbers are identical, there was an allocation error or the given structure is NULL.
  */
 bool phfwdAdd(PhoneForward *pf, char const *num1, char const *num2);
 
 /** @brief Deletes a phone forwarding.
  * Deletes all phone forwards, in which parameter @p num is a prefix
- * of parameter @p num1 used while adding. If no such phone forwarding was added
- * or the given string doesn't represent a number, nothing happens.
+ * of parameter @p num1 used while adding. If no such phone forwarding was added, the
+ * given string doesn't represent a number or @p pf is NULL, nothing happens.
  * @param[in,out] pf – pointer to the structure containing phone forwarding information.
  * @param[in] num    – pointer to the prefix of the phone numbers to be deleted.
  */
@@ -67,7 +67,7 @@ void phfwdRemove(PhoneForward *pf, char const *num);
  * Allocates structure @p PhoneNumbers, which must be then freed using @ref phnumDelete.
  * @param[in] pf  – pointer to the structure containing phone forwarding information.
  * @param[in] num – pointer to the string containing the phone number to be forwarded.
- * @return Pointer to the structure containing the sequence of phone number or NULL if
+ * @return Pointer to the structure containing the sequence of phone numbers or NULL if
  *         there was an allocation error or the given structure is NULL.
  */
 PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num);
@@ -82,10 +82,25 @@ PhoneNumbers * phfwdGet(PhoneForward const *pf, char const *num);
  * structure @p PhoneNumbers, which must be then freed using @ref phnumDelete.
  * @param[in] pf  – pointer to the structure containing phone forwarding information.
  * @param[in] num – pointer to the string containing the phone number to be reversed.
- * @return Pointer to the structure containing the sequence of phone number or NULL if
+ * @return Pointer to the structure containing the sequence of phone numbers or NULL if
  *         there was an allocation error or the given structure is NULL.
  */
 PhoneNumbers * phfwdReverse(PhoneForward const *pf, char const *num);
+
+/**
+ * @brief Obtains inverse image of the phfwdGet() function.
+ * Obtains a list of phone numbers, so that phone number @p x is a part of the result
+ * if and only if @p phfwdGet(x) = @p num. This list is sorted in lexicographic order
+ * and contains no duplicates. If the given string doesn't represent a number, the
+ * result is an empty sequence. Allocates structure @p PhoneNumbers, which must be
+ * then freed using @ref phnumDelete.
+ * @param[in] pf - pointer to the structure containing phone forwarding information.
+ * @param[in] num - pointer to the string containing the phone number to find inverse
+ *                  image of.
+ * @return Pointer to the structure containing the sequence of phone numbers or NULL if
+ *         there was an allocation error or the given structure is NULL.
+ */
+PhoneNumbers * phfwdGetReverse(PhoneForward const *pf, char const *num);
 
 /** @brief Deletes the structure.
  * Deletes the structure pointed by @p pnum. Does nothing when the pointer is NULL.

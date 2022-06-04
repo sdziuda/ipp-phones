@@ -13,4 +13,6 @@ First part of the task is to implement functions regarding phone forwarding from
 
 Second part of the task is to add '*' and '#' as supported digits and to implement function phfwdReverse().
 
+Third part of the task is to implement function phfwdGetReverse() and standardize all functions for NULL arguments.
+
 */

@@ -141,14 +141,7 @@ void phnumRemoveWithPrefix(PhoneNumbers **pNumbersPtr, char const *prefix) {
     }
 }
 
-/**
- * @brief Removes phone number at the given index.
- * This function will free the memory allocated for the phone number at the given index and then shift all other
- * phone numbers in the array to the left.
- * @param [in ,out] pNumbers - pointer to the phone numbers structure.
- * @param [in] index - index of the phone number to be removed.
- */
-static void phnumRemoveAtIndex(PhoneNumbers *pNumbers, size_t const index) {
+void phnumRemoveAtIndex(PhoneNumbers *pNumbers, size_t index) {
     free(pNumbers->array[index].number);
     pNumbers->size--;
 
